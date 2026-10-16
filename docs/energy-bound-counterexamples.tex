@@ -1,0 +1,351 @@
+\documentclass[11pt,letterpaper]{article}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern,microtype}
+\usepackage[margin=0.8in]{geometry}
+\usepackage{amsmath,amssymb,amsthm,mathtools,booktabs}
+\usepackage[colorlinks=true,linkcolor=blue,urlcolor=blue,citecolor=blue]{hyperref}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{3pt}
+\AtBeginDocument{%
+\setlength{\abovedisplayskip}{8pt}%
+\setlength{\belowdisplayskip}{8pt}}
+\hypersetup{pdftitle={Two counterexamples to a force-energy bound},
+pdfsubject={Exact counterexamples to Herman, Knorn and Ahlen, Theorem 4(iii)}}
+\newcommand{\R}{\mathbb R}
+\newcommand{\norm}[1]{\left\lVert#1\right\rVert}
+\newcommand{\sig}{\sigma_{\min}}
+\newtheorem{proposition}{Proposition}
+\newtheorem{lemma}{Lemma}
+\begin{document}
+\begin{center}
+{\LARGE Two counterexamples to a force--energy bound\par}
+\vspace{5pt}
+16 October 2026
+\end{center}
+
+The conclusion contradicted here is \textbf{Theorem 4(iii), equation (7)},
+of Herman, Knorn and Ahl\'en~\cite{HKA}, printed page 15. We give an analytic
+five-follower counterexample and an exact-arithmetic, computer-assisted
+counterexample with 128 followers and zero initial state. The latter is an
+exact polynomial replacement of the numerical witness, with a certified
+relative violation that rounds to $7.26\%$.
+
+\section{The claim and its hypotheses}
+
+Let $U$ have ones on its first superdiagonal and zero elsewhere, and put
+\[
+ B=I-U,\qquad K=BB^T,\qquad
+ D_h=(B+h|B|)B^T.
+\]
+Here $|B|$ means entrywise absolute value. We take all masses, stiffness
+coefficients and damping coefficients equal to one: in the paper's notation
+$M=A=R=I$. Position coupling is symmetric, $h_\Delta=0$, and velocity
+asymmetry is $h_p=h>0$. With a stationary leader, momentum $p$ and spacing
+error $\Delta$, the paper's system (4)--(5) becomes
+\begin{equation}\label{eq:system}
+ \dot p=-D_hp+B\Delta+d,\qquad \dot\Delta=-B^Tp,
+ \qquad H(p,\Delta)=\tfrac12(\norm p^2+\norm\Delta^2).
+\end{equation}
+All unqualified vector and operator norms are Euclidean. In equilibrium
+displacement coordinates, $p=\dot x$ and $\Delta=-B^Tx$, so equivalently
+\begin{equation}\label{eq:position}
+ \ddot x+D_h\dot x+Kx=d,\qquad
+ H=\tfrac12(\norm{\dot x}^2+\norm{B^Tx}^2).
+\end{equation}
+
+In this specialization, the claimed bound is
+\begin{equation}\label{eq:claim}
+ H(t)\leq H(0)+\frac{J}{2\sig(D_h)},\qquad
+ J=\int_0^\infty\norm{d(t)}^2\,dt.
+\end{equation}
+The integral is over the whole half-line. Both forces below vanish after their
+stated terminal time $T$, so $J=\int_0^T\norm d^2$.
+
+\begin{center}
+\begin{tabular}{@{}p{0.37\linewidth}p{0.57\linewidth}@{}}
+\toprule
+Hypothesis or convention & Check for both examples\\
+\midrule
+Assumption 2: uniformly positive, bounded $m_i,a_i,r_i$
+ & All are one, for every index and every flock size.\\[3pt]
+Assumption 3: $r_i\geq r_{i+1}$
+ & Equality holds.\\[3pt]
+Symmetric position coupling; $h_p>0$
+ & $h_\Delta=0$; $h_p=1$ in \S2 and $h_p=1/2$ in \S3.\\[3pt]
+Leader and terminal boundary
+ & Leader velocity is zero; the last follower uses only its predecessor,
+ exactly as encoded by $B$ in the source.\\[3pt]
+Admissible disturbances and initial states
+ & Forces have compact support and lie in $L^2$.
+ Theorem 4(iii) permits arbitrary initial data; \S3 starts at zero.\\
+\bottomrule
+\end{tabular}
+\end{center}
+
+The problem in the source proof is its equation (8): for nonsymmetric $D_h$,
+the relevant quadratic-form lower bound uses
+$S=(D_h+D_h^T)/2$, not $\sig(D_h)$. Indeed,
+\[
+ \dot H=-p^TD_hp+p^Td=-p^TSp+p^Td.
+\]
+Failure of that proof step alone would not disprove \eqref{eq:claim}. The two examples
+below contradict the integrated inequality itself.
+
+\newpage
+\section{An analytic counterexample with five followers}
+
+Take $N=5$, $h=1$, so $D_1=2B^T$. Set
+\begin{equation}\label{eq:small-data}
+ p_*=(3,5,6,5,3)^T,\quad \Delta(0)=0,\quad p(0)=p_*,
+ \quad d(t)=\begin{cases}p_*/2,&0\leq t\leq T,\\0,&t>T,\end{cases}
+ \quad T=\frac1{20000}.
+\end{equation}
+In particular, no velocity coupling has a negative weight; the rear velocity
+weight is zero when $h=1$.
+
+\begin{lemma}\label{lem:sigma5}
+For this matrix, $\sig(D_1)>5/9$, hence $1/(2\sig(D_1))<9/10$.
+\end{lemma}
+\begin{proof}
+Let $C=B^{-1}$, the upper triangular matrix of ones. Then
+$(C^TC)_{ij}=\min(i,j)$ and
+\[
+ \operatorname{tr}\big((C^TC)^2\big)
+ =9+28+45+48+25=155.
+\]
+Since $D_1^{-1}=C^T/2$, the largest eigenvalue of the positive matrix
+$D_1^{-1}D_1^{-T}$ satisfies
+\[
+ \sig(D_1)^{-4}
+ \leq \operatorname{tr}\big((D_1^{-1}D_1^{-T})^2\big)=\frac{155}{16}.
+\]
+Thus $\sig(D_1)^4\geq16/155>(5/9)^4$; the last comparison is the integer
+inequality $104976>96875$.
+\end{proof}
+
+Direct integer calculations give
+\[
+ \norm{p_*}^2=104,\qquad p_*^TD_1p_*=28,\qquad
+ \norm{p_*/2}^2=26.
+\]
+Consequently $H(0)=52$, $\dot H(0)=24$, and $J=26T=13/10000$.
+Define, only on $[0,T]$,
+\[
+ F(t)=H(t)-52-\frac9{10}\,26t.
+\]
+Then $F(0)=0$ and $F'(0)=24-117/5=3/5>0$.
+Continuity already proves a violation at some positive time. The following
+bound supplies the explicit time in \eqref{eq:small-data}.
+
+Write $y=(p,\Delta)$ and
+$\mathcal A=\begin{psmallmatrix}-D_1&B\\-B^T&0\end{psmallmatrix}$.
+Since $\norm B\leq2$, $\norm{D_1}\leq4$, we have $\norm{\mathcal A}\leq6$.
+Also $\norm{y(0)}<11$ and $\norm{(p_*/2,0)}<6$.
+Variation of constants, and $e^u\leq(1-u)^{-1}$ for $0\leq u<1$, yield
+\[
+ \norm{y(t)}\leq e^{6t}(11+6t)
+ \leq\frac{553}{47}<12\qquad(0\leq t\leq T<1/100).
+\]
+For $0<t<T$, the force is constant and these estimates give
+\[
+ \norm{\dot y}\leq78,\qquad \norm{\ddot y}\leq468,
+ \qquad |\ddot H|\leq78^2+12\cdot468=11700.
+\]
+Apply these estimates on $[0,T]$. Taylor's integral remainder gives
+\begin{equation}\label{eq:small-gap}
+ F(T)\geq\frac35T-5850T^2
+ =\frac{123}{8000000}>0.
+\end{equation}
+By Lemma~\ref{lem:sigma5}, the actual claimed right-hand side is strictly
+smaller than $52+(9/10)J$. Therefore
+\[
+ H(T)>52+\frac9{10}J
+ >52+\frac{J}{2\sig(D_1)}.
+\]
+This is a fully analytic counterexample to Theorem 4(iii). The estimates do not
+depend on numerical integration or floating-point eigenvalues.
+
+\newpage
+\section{An exact counterexample with zero initial state}
+
+\subsection*{How the numerical witness was found}
+For $N=128$, $h=1/2$, $T=512$, let
+\[
+ \mathcal A_x=\begin{pmatrix}0&I\\-K&-D_{1/2}\end{pmatrix},\quad
+ F_x=\binom0I,\quad C_x=\operatorname{diag}(B^T,I),\quad
+ W_T=\int_0^T e^{s\mathcal A_x}F_xF_x^Te^{s\mathcal A_x^T}\,ds.
+\]
+The largest possible final energy for a unit-$L^2$ force and zero initial state
+is $\tfrac12\lambda_{\max}(C_xW_TC_x^T)$; its top eigenvector determines a
+maximizing force.
+Numerically this gives energy $43.74150560$ against a claimed coefficient
+$40.78143255$. These calculations locate a witness; they are not needed to
+verify the exact counterexample below.
+
+\subsection*{An exactly specified trajectory and force}
+Put $m=2048$, $t_j=j/4$, $M_0=2^{40}$ and $Q=4M_0$.
+The supplied integer data consist of
+$X_j,V_j\in\mathbb Z^{128}$ for $0\leq j\leq m$, with
+$X_0=V_0=0$. On $[t_j,t_{j+1}]$, set $u=4(t-t_j)$ and
+\begin{equation}\label{eq:hermite}
+ x(t)=Q^{-1}\sum_{k=0}^3 C_{j,k}u^k,
+\end{equation}
+where
+\begin{align*}
+ C_{j,0}&=4X_j,&C_{j,1}&=V_j,\\
+ C_{j,2}&=12(X_{j+1}-X_j)-2V_j-V_{j+1},&
+ C_{j,3}&=8(X_j-X_{j+1})+V_j+V_{j+1}.
+\end{align*}
+These formulas give $x(t_j)=X_j/M_0$ and $\dot x(t_j)=V_j/M_0$ on both sides
+of every knot. Thus $x$ is $C^1$ and starts from $x(0)=\dot x(0)=0$.
+\emph{Define}, almost everywhere on $[0,T]$,
+\begin{equation}\label{eq:exact-force}
+ d=\ddot x+D_{1/2}\dot x+Kx.
+\end{equation}
+After $T$, set $d=0$ and continue the homogeneous ODE from the endpoint state.
+This force is a bounded piecewise polynomial, hence belongs to $L^2$.
+Jumps at the finitely many knots cause no difficulty: $x$ and $\dot x$ are
+continuous, so there are no impulsive acceleration terms.
+
+Rounding a numerical trajectory proposed these integer coefficients. They now
+define a new trajectory exactly, so no interpolation error enters the proof.
+
+\subsection*{Exact input cost and terminal energy}
+Let $D_2=2D_{1/2}$. Its diagonal is $(4,\ldots,4,3)$, its subdiagonal is $-3$,
+and its superdiagonal is $-1$. The matrix $K$ has diagonal $(2,\ldots,2,1)$
+and adjacent off-diagonals $-1$. With $C_{j,k}=0$ for $k>3$, put
+\[
+ G_{j,k}=2KC_{j,k}+4(k+1)D_2C_{j,k+1}
+             +32(k+1)(k+2)C_{j,k+2}.
+\]
+Then $d(t)=(2Q)^{-1}\sum_{k=0}^3G_{j,k}u^k$. Consequently
+\begin{align}
+ J&=\frac1{16Q^2}\sum_{j=0}^{m-1}\sum_{k,l=0}^3
+            \frac{G_{j,k}^TG_{j,l}}{k+l+1},\label{eq:J-exact}\\
+ H(T)&=\frac{\norm{V_m}^2+\norm{B^TX_m}^2}{2M_0^2}.\label{eq:H-exact}
+\end{align}
+Integer arithmetic and rational summation give
+\begin{align*}
+ J&=\frac{16247963052961153388411898917}
+          {16247963015620616108051005440},\\
+ H(T)&=\frac{6610029438766194687931881}
+            {151115727451828646838272}.
+\end{align*}
+In particular, the exact comparisons
+\begin{equation}\label{eq:simpleHJ}
+ 0<J<\frac{101}{100},\qquad H(T)>43
+\end{equation}
+already suffice for a contradiction.
+
+\subsection*{A certified singular-value comparison}
+For a positive rational $s=a/b$, form the integer pentadiagonal matrix
+\[
+ \mathcal G_s=b^2D_2^TD_2-4a^2I
+             =4b^2\big(D_{1/2}^TD_{1/2}-s^2I\big).
+\]
+The verifier performs exact rational $LDL^T$ elimination and reconstructs the
+factorization. For $s=3/250$, all 128 pivots are strictly positive. Hence
+$\mathcal G_s\succ0$ and $\sig(D_{1/2})>3/250$. Combining this with
+\eqref{eq:simpleHJ},
+\begin{equation}\label{eq:zero-contradiction}
+ \frac{J}{2\sig(D_{1/2})}
+ <\frac{125}{3}J
+ <\frac{505}{12}
+ <43<H(T).
+\end{equation}
+Since $H(0)=0$, this explicitly contradicts \eqref{eq:claim}.
+If an exactly unit-$L^2$ input is preferred, divide $x,\dot x,d$ by $\sqrt J$;
+the inequality is homogeneous, so the contradiction is preserved.
+
+For completeness, the banded elimination uses only the following recurrence.
+Writing $g_{ij}=(\mathcal G_s)_{ij}$, $\ell_{ii}=1$, and omitting terms with
+negative indices,
+\begin{align*}
+ \ell_{i,i-2}&=g_{i,i-2}/\delta_{i-2},\\
+ \ell_{i,i-1}&=(g_{i,i-1}-\ell_{i,i-2}\delta_{i-2}\ell_{i-1,i-2})/\delta_{i-1},\\
+ \delta_i&=g_{ii}-\ell_{i,i-1}^2\delta_{i-1}
+                     -\ell_{i,i-2}^2\delta_{i-2}.
+\end{align*}
+All divisions and signs are evaluated as rational numbers. The certificate
+lists every pivot, and the checker verifies the identity
+$\mathcal G_s=L\operatorname{diag}(\delta_i)L^T$.
+
+\subsection*{Certifying the size of the violation}
+The same exact elimination gives the sharper bracket
+\[
+ \frac{245209}{20000000}<\sig(D_{1/2})<\frac{24521}{2000000}.
+\]
+The lower matrix has 128 positive pivots. The upper matrix has 127 positive
+and one negative pivot, so Sylvester's law of inertia proves the upper bound.
+Using the exact $H(T)$ and $J$ above, these brackets certify
+\[
+ 7.2581\%
+ <\frac{H(T)}{J/(2\sig(D_{1/2}))}-1
+ <7.25855\%.
+\]
+Thus $7.26\%$ is a justified rounding for the exact polynomial witness,
+independently of floating-point singular-value computations.
+
+\section{Verification, data and scope}
+
+The accompanying certificate bundle contains the complete integer trajectory
+and two verifiers. From the repository root, using only the Python standard
+library, run
+\begin{verbatim}
+python3 certificates/energy-short-time/verify.py
+python3 certificates/energy-zero-state/verify.py
+\end{verbatim}
+The first checks the finite integer identities and rational norm/Taylor bounds
+in \S2. The second checks the data, zero initial conditions, knot matching,
+exact polynomial integrals, every factorization pivot, and the strict energy
+comparisons in \S3. Neither requires NumPy, SciPy, an ODE solver, a matrix
+exponential or a floating-point eigensolver. Decimal summaries are not used
+in any proof decision. An optional proposal script explains the numerical
+origin of the data and is never imported by either checker.
+
+The integer data format is one ASCII JSON header followed by 2049 rows of decimal
+integers, in the order
+\[
+ X_{j,1},\ldots,X_{j,128},V_{j,1},\ldots,V_{j,128}.
+\]
+The compressed file is \texttt{trajectory.txt.gz}; its SHA-256 is
+\begin{center}\footnotesize\ttfamily
+b2411735af07bf15f213da435844786c417ae3d180760e8948421b304fe2c97f.
+\end{center}
+The hash identifies the finite witness; correctness follows from the exact
+checks, not from a claim that the proposed data are accurate samples.
+The five-follower argument is entirely analytic. The zero-state argument is
+a computer-assisted proof by exact rational arithmetic, with its data and
+checking algorithm supplied. It is not a formalization in a proof assistant.
+
+Smooth compactly supported disturbances also exist: the terminal state depends
+continuously on $d$ in $L^2(0,T)$ through the bounded map
+$d\mapsto\int_0^T e^{(T-s)\mathcal A_x}F_xd(s)\,ds$.
+Thus the strict violation persists under sufficiently small smooth $L^2$
+approximations. The explicit certificates use the polynomial forces above.
+
+These examples refute the stated finite coefficient in Theorem 4(iii).
+They do not refute the separate asymptotic stability and passivity assertions
+in parts (i)--(ii), or the singular-value estimates of Lemma 6.
+For a positive definite symmetric part $S=(D_h+D_h^T)/2$, a valid bound follows
+directly from the energy identity and Young's inequality:
+\[
+ H(t)\leq H(0)+\frac1{4\lambda_{\min}(S)}
+                     \int_0^t\norm{d(s)}^2\,ds.
+\]
+Indeed, $-\lambda\norm p^2+p^Td\leq\norm d^2/(4\lambda)$.
+This supplies a valid replacement estimate; it does not establish the
+paper's asserted scaling in $N$ for the sharper, system-dependent gain.
+
+\begin{thebibliography}{1}
+\bibitem{HKA}
+I.~Herman, S.~Knorn and A.~Ahl\'en,
+\emph{Disturbance scaling in bidirectional vehicle platoons with different
+asymmetry in position and velocity coupling},
+Automatica \textbf{82} (2017), 13--20.
+\href{https://doi.org/10.1016/j.automatica.2017.04.010}
+{doi:10.1016/j.automatica.2017.04.010}.
+Theorem 4 and equations (3)--(9) are on printed p.~15 in the supplied
+published PDF; the corresponding author manuscript is dated 15 March 2017.
+\end{thebibliography}
+\end{document}

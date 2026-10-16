@@ -126,7 +126,8 @@ Two useful papers were already present under their supplied filenames:
 
 The latter studies force-disturbance energy bounds under its own boundary and
 coupling assumptions. The `energy` experiment finds a failed quadratic-form step
-in equation (8) and a numerical counterexample to the integrated bound in
-equation (7); see the [numerical notes](numerical-notes.md). These findings concern
+in equation (8). Analytic and exact-arithmetic counterexamples to Theorem 4(iii),
+equation (7), are given in the [proof](energy-bound-counterexamples.pdf); see also
+the [numerical notes](numerical-notes.md). These findings concern
 the printed finite coefficient; the asymptotic scaling and tail-extremum formulas
 are separate claims.

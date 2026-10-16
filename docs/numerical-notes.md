@@ -17,7 +17,13 @@ recovered. New ensembles save their complete coefficient arrays and selection
 procedure. Lyons's original random seeds are also absent; his examples are
 reconstructed parameter families with saved samples.
 
-## The energy bound
+## The energy bound: exact counterexamples
+
+The conclusion that fails is **Theorem 4(iii), equation (7)** of
+Herman–Knorn–Ahlén (2017). The [self-contained proof](energy-bound-counterexamples.pdf)
+gives a five-follower analytic counterexample and a zero-initial-state example
+checked by exact rational arithmetic. The [verification files](../certificates/README.md)
+use only the Python standard library.
 
 Herman–Knorn–Ahlén (2017), equation (8), uses
 $y^T D y\geq\sigma_{\min}(D)\|y\|^2$ for a nonsymmetric damping matrix.
@@ -32,7 +38,7 @@ $$y^TDy=0.00853588766<0.04893368534=\sigma_{\min}(D).$$
 Thus this proof step fails within the stated homogeneous parameter regime.
 The valid symmetric-part estimate is
 
-$$H(t)\leq H(0)+\frac{1}{2\lambda_{\min}(S)}
+$$H(t)\leq H(0)+\frac{1}{4\lambda_{\min}(S)}
                     \int_0^t\|d(s)\|^2\,ds,$$
 
 when $S$ is positive definite.
@@ -60,9 +66,12 @@ vectors. The plotted comparison applies equation (7) to the input truncated at
 each observation time. Adjoint and forced DOP853 integration agrees with the Gramian prediction
 to $1.1\times10^{-12}$ relative state error. A separate check using the source's
 momentum and spacing equations and a spline interpolant of the saved input
-gives the same excess. This is numerical evidence against the finite coefficient
-as printed; it does not settle the asymptotic scaling claims. Singular-value
-scaling and the original single-site pulse are computed separately.
+gives the same excess. These checks located the numerical witness. A nearby
+exact dyadic Hermite trajectory, with force defined from the ODE, now certifies
+$7.2581\%<\text{excess}<7.25855\%$ without numerical integration or eigenvalues.
+This refutes the printed finite coefficient; it does not settle the asymptotic
+scaling claims. Singular-value scaling and the original single-site pulse are
+computed separately.
 
 ## Narrow resonances
 

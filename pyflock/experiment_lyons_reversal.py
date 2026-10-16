@@ -405,11 +405,36 @@ def compute(profile="quick", jobs=1, checkpoint=None):
 
 def draw(data, meta):
     import matplotlib.pyplot as plt
+    from matplotlib.ticker import MaxNLocator
+
+    circle, path = data["bloch_eigenvalues"], data["path_eigenvalues"]
+    # Locate the largest empty real interval in the saved complete spectra.
+    real_parts = np.sort(np.r_[circle.real, path.real])
+    gap_index = int(np.argmax(np.diff(real_parts)))
+    left_edge, right_edge = real_parts[gap_index : gap_index + 2]
+    left_span = max(left_edge - real_parts[0], 0.1)
+    right_span = max(real_parts[-1] - right_edge, 0.1)
+    left_limits = (real_parts[0] - 0.06 * left_span, left_edge + 0.06 * left_span)
+    right_limits = (right_edge - 0.07 * right_span, real_parts[-1] + 0.07 * right_span)
+    if left_limits[1] >= right_limits[0]:
+        raise ValueError("The saved spectrum has no separated real cluster to split")
+    omitted = (left_limits[1], right_limits[0])
+    if np.any((real_parts > omitted[0]) & (real_parts < omitted[1])):
+        raise ValueError("A broken-axis interval would conceal an eigenvalue")
 
     with plot_style():
-        fig, axes = plt.subplots(1, 3, figsize=(13.2, 4.4), layout="constrained")
-        circle, path = data["bloch_eigenvalues"], data["path_eigenvalues"]
-        for ax in axes[:2]:
+        fig = plt.figure(figsize=(11.4, 8.2), layout="constrained")
+        outer = fig.add_gridspec(3, 1, height_ratios=(0.12, 1, 1))
+        legend_ax = fig.add_subplot(outer[0])
+        legend_ax.set_axis_off()
+        top = outer[1].subgridspec(1, 2, width_ratios=(1, 3.1), wspace=0.035)
+        left = fig.add_subplot(top[0, 0])
+        bulk = fig.add_subplot(top[0, 1], sharey=left)
+        bottom = outer[2].subgridspec(1, 2, width_ratios=(1, 1), wspace=0.12)
+        detail = fig.add_subplot(bottom[0, 0])
+        response = fig.add_subplot(bottom[0, 1])
+
+        def spectrum(ax):
             ax.axvline(0, color="0.5", lw=0.65, zorder=0)
             ax.axhline(0, color="0.75", lw=0.5, zorder=0)
             ax.scatter(
@@ -418,7 +443,7 @@ def draw(data, meta):
                 s=14,
                 color=CAT[2],
                 marker="o",
-                label="Circle (128 roots)",
+                label=f"Circle ({len(circle)} roots)",
                 alpha=0.8,
             )
             ax.scatter(
@@ -429,56 +454,91 @@ def draw(data, meta):
                 edgecolors=CAT[1],
                 marker="s",
                 lw=0.75,
-                label="Path followers (126 roots)",
+                label=f"Path followers ({len(path)} roots)",
             )
             ax.plot(0, 0, "+", color="0.2", ms=7, mew=1.0, label="2 coherent zeros")
-            ax.set(
-                xlabel=r"$\operatorname{Re}\lambda$",
-                ylabel=r"$\operatorname{Im}\lambda$",
-            )
+            ax.set(xlabel=r"$\operatorname{Re}\lambda$")
             ax.grid(True, alpha=0.25)
-        axes[0].set_title("Complete finite spectra")
-        axes[0].legend(fontsize=7.8, loc="upper left")
-        axes[1].set(
-            title="Near the imaginary axis", xlim=(-0.016, 0.0025), ylim=(-0.17, 0.17)
+
+        for ax in (left, bulk, detail):
+            spectrum(ax)
+        left.set(
+            xlim=left_limits,
+            title="Distant real cluster",
+            ylabel=r"$\operatorname{Im}\lambda$",
         )
-        axes[1].ticklabel_format(
+        bulk.set(xlim=right_limits, title="Complete spectra: near-origin bulk")
+        extent = 1.12 * max(abs(circle.imag).max(), abs(path.imag).max())
+        left.set_ylim(-extent, extent)
+        left.xaxis.set_major_locator(MaxNLocator(3))
+        bulk.xaxis.set_major_locator(MaxNLocator(6))
+        bulk.tick_params(axis="y", left=False, labelleft=False)
+        bulk.spines["left"].set_visible(False)
+        # Paired slashes mark the discontinuous top real axis at both edges.
+        for ax, x in ((left, 1), (bulk, 0)):
+            for y in (0, 1):
+                ax.plot(
+                    [x - 0.012, x + 0.012],
+                    [y - 0.022, y + 0.022],
+                    transform=ax.transAxes,
+                    color=".3",
+                    lw=0.8,
+                    clip_on=False,
+                )
+        handles, labels = bulk.get_legend_handles_labels()
+        legend_ax.legend(handles, labels, loc="center", ncol=3, fontsize=9)
+
+        detail.set(
+            title="Near the imaginary axis",
+            xlim=(-0.016, 0.0025),
+            ylim=(-0.17, 0.17),
+            ylabel=r"$\operatorname{Im}\lambda$",
+        )
+        detail.ticklabel_format(
             axis="x", style="sci", scilimits=(-2, -2), useMathText=True
         )
-        axes[1].text(
+        detail.text(
             0.03,
             0.97,
             "Unstable circle pair",
-            transform=axes[1].transAxes,
+            transform=detail.transAxes,
             va="top",
             color=CAT[2],
             fontsize=8.5,
         )
-        axes[2].semilogy(
+        response.semilogy(
             data["times"], data["circle_response"], color=CAT[2], label="Circle"
         )
-        axes[2].semilogy(
+        response.semilogy(
             data["times"],
             data["path_response"],
             color=CAT[1],
             label="Path, same initial state",
         )
-        axes[2].set(
+        response.set(
             title="Matched mode response",
             xlabel="Time",
             ylabel="Normalized translation-free state norm",
         )
-        axes[2].legend(fontsize=8)
-        axes[2].grid(True, alpha=0.3)
+        response.legend(fontsize=8)
+        response.grid(True, alpha=0.3)
         fig.suptitle(
             r"A constructed circle instability with a stable path: $N=64$, $\beta_v=0.1$",
             fontsize=12,
         )
-        fig.get_layout_engine().set(rect=(0, 0.13, 1, 0.87))
+        fig.get_layout_engine().set(rect=(0, 0.14, 1, 0.86))
         fig.text(
             0.5,
-            0.065,
-            r"Cell $g_x=(1,1)$, $g_v=(2,18)$ repeated 32 times; the path has a fixed leader and regular tail.",
+            0.103,
+            f"Top real axis omits the empty interval ({omitted[0]:.2f}, {omitted[1]:.2f}); every eigenvalue is retained.",
+            ha="center",
+            fontsize=8.5,
+            color=".3",
+        )
+        fig.text(
+            0.5,
+            0.062,
+            r"Cell $g_x=(1,1)$, $g_v=(2,18)$ repeated 32 times; fixed path leader and regular tail.",
             ha="center",
             fontsize=8.5,
             color=".3",
@@ -486,7 +546,7 @@ def draw(data, meta):
         fig.text(
             0.5,
             0.022,
-            "Two real quadratures of one unstable circle mode; uniform position and velocity are removed from the norm. New constructed example.",
+            "Two real quadratures of one circle mode; uniform position and velocity removed from the norm. New constructed example.",
             ha="center",
             fontsize=8,
             color=".35",

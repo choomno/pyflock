@@ -60,6 +60,9 @@ Reduce `--jobs` to limit CPU use.
 See the [gallery](docs/gallery.md) for the question and interpretation of each figure.
 The [expanded gallery](docs/gallery-expanded.md) covers the additional experiments.
 The [coverage map](docs/coverage.md) records source fidelity and remaining gaps.
+The [energy-bound counterexamples](docs/energy-bound-counterexamples.pdf) check
+the source theorem's hypotheses and give analytic and exact-arithmetic proofs,
+including a zero-initial-state example. Both have [standalone verifiers](certificates/README.md).
 
 ## Model
 

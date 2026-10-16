@@ -82,6 +82,8 @@ $g_v=2,18$, and $\beta_v=.1$. Full finite spectra give an unstable circle pair
 with real part $5.62\times10^{-4}$, while the follower path has spectral abscissa
 $-8.13\times10^{-3}$. A positive Lyapunov matrix independently checks path stability.
 The complete cell and selection rule are recorded; these are constructed gains.
+The full spectrum uses a broken real axis: the distant negative cluster occupies
+a narrow panel, leaving space to distinguish the right-hand eigenvalues.
 The response uses the same saved complex initial state on both graphs, interpreted
 as two real quadratures. Its norm removes uniform displacement and velocity and
 is normalized to one initially.
@@ -120,8 +122,9 @@ $V=\langle g_v/g_x\rangle$.
 kinetic-plus-spacing energy. A second, distributed forcing gives a numerical
 counterexample to the source's equation (7): final energy exceeds its bound by
 7.26%. Independent integration in momentum and spacing coordinates confirms the
-violation. The [numerical notes](numerical-notes.md) give its construction and
-the valid symmetric-part estimate.
+violation. A nearby exact polynomial witness is now certified in rational
+arithmetic. The [proof](energy-bound-counterexamples.pdf) checks the theorem's
+hypotheses; the [numerical notes](numerical-notes.md) describe the original experiment.
 
 ![Controlled continuum limit](img/continuum.png)
 
