@@ -393,40 +393,45 @@ def draw(name, data, meta):
             axs[0].set_ylabel(r"Last follower $(z_N-z_0)/N$")
             axs[1].legend(loc="lower right", fontsize=8)
         elif name == "boundary":
-            fig, axs = plt.subplots(1, 3, figsize=(12, 3.8), layout="constrained")
+            fig, grid = plt.subplots(2, 2, figsize=(9.2, 7.2), layout="constrained")
+            spectrum, zoom = grid[0]
+            response, growth = grid[1]
             for key, col, label, marker in [
-                ("circle", CAT[1], "Circle", "o"),
-                ("path", CAT[2], "Path", "x"),
+                ("circle", CAT[1], "Circle spectrum", "o"),
+                ("path", CAT[2], "Path spectrum", "x"),
             ]:
                 vals = data[key]
-                axs[0].scatter(
-                    vals.real, vals.imag, s=12, color=col, marker=marker, label=label
+                spectrum.scatter(
+                    vals.real, vals.imag, s=13, color=col, marker=marker, label=label
                 )
-            axs[0].axvline(0, color="#777777", lw=0.7)
-            axs[0].legend(fontsize=8)
-            axs[0].set(
+                zoom.scatter(
+                    1000 * vals.real, 1000 * vals.imag, s=22, color=col, marker=marker
+                )
+            for ax in (spectrum, zoom):
+                ax.axvline(0, color="#777777", lw=0.7)
+            spectrum.set(
                 xlabel=r"$\operatorname{Re}\lambda$",
                 ylabel=r"$\operatorname{Im}\lambda$",
-                title="Finite-system spectra",
+                title="Full spectrum",
             )
-            inset = axs[0].inset_axes([0.48, 0.31, 0.48, 0.35])
-            for key, col, marker in [("circle", CAT[1], "o"), ("path", CAT[2], "x")]:
-                vals = data[key]
-                inset.scatter(vals.real, vals.imag, s=9, color=col, marker=marker)
-            inset.axvline(0, color="#777777", lw=0.6)
-            inset.set_xlim(-0.012, 0.007)
-            inset.set_ylim(-0.06, 0.06)
-            inset.set_title("Near zero", fontsize=8)
-            inset.tick_params(labelsize=7)
-            inset.set_xticks([-0.01, 0])
-            inset.set_yticks([-0.05, 0, 0.05])
+            zoom.set(
+                xlim=(-4, 5.5),
+                ylim=(-60, 60),
+                xticks=[-4, -2, 0, 2, 4],
+                yticks=[-50, 0, 50],
+                xlabel=r"$10^3\operatorname{Re}\lambda$",
+                ylabel=r"$10^3\operatorname{Im}\lambda$",
+                title="Spectrum near the origin",
+            )
+            handles, labels = spectrum.get_legend_handles_labels()
+            fig.legend(handles, labels, loc="outside upper center", ncol=2)
             N = meta["N"]
             t = data["t"]
             z = data["z"]
             early = t <= 3 * N
             field = np.diff(z[early], axis=1)
             limit = abs(field).max()
-            im = axs[1].pcolormesh(
+            im = response.pcolormesh(
                 np.arange(1, N + 1),
                 t[early] / N,
                 field,
@@ -436,19 +441,19 @@ def draw(name, data, meta):
                 shading="nearest",
                 rasterized=True,
             )
-            fig.colorbar(im, ax=axs[1], label=r"$z_k-z_{k-1}$", shrink=0.9, pad=0.025)
-            axs[1].set(
+            fig.colorbar(im, ax=response, label=r"$z_k-z_{k-1}$", shrink=0.9, pad=0.025)
+            response.set(
                 xlabel="Follower index $k$", ylabel="Time $t/N$", title="Early response"
             )
             amplitude = np.max(abs(z - z[:, [0]]), axis=1) / N
             keep = t >= 0.2 * N
-            axs[2].semilogy(t[keep] / N, amplitude[keep], color=CAT[2])
-            axs[2].set(
+            growth.semilogy(t[keep] / N, amplitude[keep], color=CAT[2])
+            growth.set(
                 xlabel="Time $t/N$",
                 ylabel=r"$\max_k|z_k-z_0|/N$",
                 title="Growth on the path",
             )
-            axs[2].grid(True, alpha=0.4)
+            growth.grid(True, alpha=0.4)
         elif name == "dispersion":
             fig, axs = plt.subplots(1, 2, figsize=(9, 3.7), layout="constrained")
             lam = data["branches"]

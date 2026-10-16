@@ -33,7 +33,7 @@ step are described in [Model and conventions](model.md).
 ![Boundary effects](img/boundary.png)
 
 `boundary`: the historical circle-stable/path-unstable NNN example, with
-80 followers and the `drop` boundary. The inset resolves eigenvalues near zero.
+80 followers and the `drop` boundary. A separate panel resolves eigenvalues near zero.
 The middle panel shows the early spacing field; the last shows the maximum
 leader-relative displacement over agents, on a logarithmic scale. Separating the
 time windows keeps late growth from obscuring the early response. This is a direct
