@@ -71,3 +71,27 @@ print(pf.transient_summary(res.t, res.last_relative))
 [Numerical notes](docs/numerical-notes.md) records coefficient corrections and
 precision limits. Tests compare independent Fourier, matrix and ODE methods;
 source records distinguish numerical sensitivity from asymptotic error.
+
+## References
+
+- C. E. Cantos, J. J. P. Veerman, and D. K. Hammond.
+  [*Signal velocity in oscillator arrays*](https://doi.org/10.1140/epjst/e2016-02665-0).
+  European Physical Journal Special Topics **225**, 1115–1126 (2016).
+- C. E. Cantos, D. K. Hammond, and J. J. P. Veerman.
+  [*Transients in the synchronization of asymmetrically coupled oscillator arrays*](https://doi.org/10.1140/epjst/e2016-02658-y).
+  European Physical Journal Special Topics **225**, 1199–1209 (2016).
+- J. Herbrych, A. G. Chazirakis, N. Christakis, and J. J. P. Veerman.
+  [*Dynamics of locally coupled agents with next nearest neighbor interaction*](https://doi.org/10.1007/s12591-017-0377-3).
+  Differential Equations and Dynamical Systems **29**, 487–509 (2021; online 2017).
+- F. M. Tangerman, J. J. P. Veerman, and B. D. Stošić.
+  [*Asymmetric decentralized flocks*](https://doi.org/10.1109/TAC.2012.2199150).
+  IEEE Transactions on Automatic Control **57**(11), 2844–2853 (2012).
+- J. J. P. Veerman.
+  [*Symmetry and stability of homogeneous flocks (a position paper)*](https://pdxscholar.library.pdx.edu/mth_fac/131/).
+  Portland State University working paper (2010).
+- R. G. Lyons.
+  [*Linear Nearest Neighbor Flocks With All Distinct Agents*](https://pdxscholar.library.pdx.edu/open_access_etds/5903/).
+  PhD dissertation, Portland State University (2022).
+- I. Herman, S. Knorn, and A. Ahlén.
+  [*Disturbance scaling in bidirectional vehicle platoons with different asymmetry in position and velocity coupling*](https://doi.org/10.1016/j.automatica.2017.04.010).
+  Automatica **82**, 13–20 (2017).
