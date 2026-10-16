@@ -25,6 +25,14 @@ python -m pyflock.experiments all
 python -m pytest
 ```
 
+For linting and formatting checks:
+
+```sh
+python -m pip install -r requirements-dev.txt
+python -m ruff check .
+python -m ruff format --check .
+```
+
 Each demo saves PDF, SVG and PNG figures, numerical arrays, and a JSON record of
 parameters, sources, software versions and checksums under `figures/`. To run
 one demo, or redraw its saved arrays:

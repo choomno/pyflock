@@ -78,7 +78,7 @@ def branches(theta, st: Stencil, labelling: str = "continuous"):
     if labelling == "by_imag":
         first = np.where(lo.imag >= hi.imag, lo, hi)
         second = np.where(lo.imag >= hi.imag, hi, lo)
-        return np.stack([first, second]).reshape((2,) + shape)
+        return np.stack([first, second]).reshape((2, *shape))
 
     if labelling != "continuous":
         raise ValueError(f"unknown labelling {labelling!r}")
@@ -114,7 +114,7 @@ def branches(theta, st: Stencil, labelling: str = "continuous"):
             out[:, idx] = roots
         else:
             out[:, idx] = np.conj(roots[::-1] if a < 0 else roots)
-    return out.reshape((2,) + shape)
+    return out.reshape((2, *shape))
 
 
 def signal_velocities(st: Stencil) -> tuple[float, float]:

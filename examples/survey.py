@@ -1,6 +1,7 @@
 """Finite-system spectral survey; sensitivity is not a certificate."""
 
 import numpy as np
+
 import pyflock as pf
 from pyflock.plotting import circle_eigenvalues
 

@@ -30,12 +30,12 @@ from scipy import sparse as sp
 from .stencil import Stencil
 
 __all__ = [
-    "laplacian_line",
+    "BOUNDARY_CONDITIONS",
     "laplacian_circle",
+    "laplacian_line",
+    "system_matrix_circle",
     "system_matrix_line",
     "system_matrix_line_leaderless",
-    "system_matrix_circle",
-    "BOUNDARY_CONDITIONS",
 ]
 
 BOUNDARY_CONDITIONS = ("drop", "fold", "regular")

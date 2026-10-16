@@ -16,24 +16,25 @@ Leading-order theory (their Theorem 3) predicts, with r = c_-/c_+ < 0,
 from __future__ import annotations
 
 from dataclasses import dataclass
+
 import numpy as np
 
+from .dispersion import coefficients, signal_velocities
 from .stencil import Stencil
-from .dispersion import signal_velocities, coefficients
 
 __all__ = [
     "Extremum",
-    "extrema",
-    "transient_summary",
-    "theory_amplitudes",
-    "corrected_amplitudes",
-    "relative_error_law",
-    "eigen_reliability",
-    "least_stable_eigenvalue",
-    "critical_velocity_asymmetry",
-    "velocity_asymmetry_family",
     "StabilityMap",
+    "corrected_amplitudes",
+    "critical_velocity_asymmetry",
+    "eigen_reliability",
+    "extrema",
+    "least_stable_eigenvalue",
+    "relative_error_law",
     "stability_map",
+    "theory_amplitudes",
+    "transient_summary",
+    "velocity_asymmetry_family",
 ]
 
 
@@ -345,7 +346,10 @@ def critical_velocity_asymmetry(
     from scipy.optimize import brentq
 
     fam = velocity_asymmetry_family(gx, gv)
-    f = lambda q: least_stable_eigenvalue(fam(q), N, method=method)
+
+    def f(q):
+        return least_stable_eigenvalue(fam(q), N, method=method)
+
     lo, hi = -0.5, 0.5
     if not (f(lo) > 0.0 > f(hi)):
         raise RuntimeError(

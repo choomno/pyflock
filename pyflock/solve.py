@@ -14,23 +14,24 @@ The default propagators evaluate the matrix exponential in floating-point arithm
 from __future__ import annotations
 
 from dataclasses import dataclass
+
 import numpy as np
+from scipy.integrate import solve_ivp
 from scipy.linalg import expm
 from scipy.sparse import csr_matrix, issparse
 from scipy.sparse.linalg import expm_multiply
-from scipy.integrate import solve_ivp
 
+from .dispersion import nu_v, nu_x
+from .matrices import system_matrix_circle, system_matrix_line
 from .stencil import Stencil
-from .matrices import system_matrix_line, system_matrix_circle
-from .dispersion import nu_x, nu_v
 
 __all__ = [
-    "LineResult",
     "CircleResult",
+    "LineResult",
+    "propagate",
+    "simulate_circle",
     "simulate_line",
     "simulate_tail",
-    "simulate_circle",
-    "propagate",
 ]
 
 

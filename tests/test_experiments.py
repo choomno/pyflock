@@ -1,6 +1,7 @@
 """Scientific and reproducibility regressions for the reconstructed gallery."""
 
 import json
+
 import matplotlib
 
 matplotlib.use("Agg")
@@ -8,9 +9,10 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pytest
 from scipy.optimize import linear_sum_assignment
+
 import pyflock as pf
-from pyflock import plotting as P
 from pyflock import experiments as E
+from pyflock import plotting as P
 
 
 def test_circle_mode_removal_preserves_unstable_eigenvalues():

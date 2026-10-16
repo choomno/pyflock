@@ -18,3 +18,13 @@ include = ["pyflock*"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+
+[tool.ruff]
+target-version = "py310"
+include = ["pyflock/**/*.py", "examples/**/*.py", "tests/**/*.py"]
+force-exclude = true
+
+[tool.ruff.lint]
+select = ["E4", "E7", "E9", "F", "I", "C4", "RUF"]
+# Bibliographic page ranges and displayed intervals use en dashes.
+allowed-confusables = ["–"]

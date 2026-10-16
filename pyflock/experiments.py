@@ -5,23 +5,25 @@ larger research run; the default profile demonstrates the same measurements.
 """
 
 from __future__ import annotations
+
 import argparse
-from importlib import import_module
-from hashlib import sha256
 import json
-from pathlib import Path
 import platform
 import subprocess
 import time
+from hashlib import sha256
+from importlib import import_module
+from pathlib import Path
+
 import numpy as np
 
-from . import nn_stencil, case, simulate_line, simulate_circle
-from .dispersion import branches, taylor, signal_velocities, coefficients
+from . import case, nn_stencil, simulate_circle, simulate_line
 from .analysis import extrema, theory_amplitudes, transient_summary
+from .dispersion import branches, coefficients, signal_velocities, taylor
 from .matrices import system_matrix_line_leaderless
 from .plotting import circle_eigenvalues
 from .solve import simulate_tail
-from .style import CAT, SEQ, DIVERGING, plot_style
+from .style import CAT, DIVERGING, SEQ, plot_style
 
 ORIGINAL_NAMES = (
     "propagation",
@@ -677,7 +679,7 @@ def run(name, output, *, profile="quick", redraw=False, jobs=1):
                 "samples": len(value),
             }
             for key, value in data.items()
-            if key == "t" or key.endswith("_t") and not key.endswith("pred_t")
+            if key == "t" or (key.endswith("_t") and not key.endswith("pred_t"))
         }
         if grids:
             meta["time_grids"] = grids
