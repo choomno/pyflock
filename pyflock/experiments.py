@@ -594,10 +594,10 @@ def run(name, output, *, profile="quick", redraw=False, jobs=1):
     else:
         computation_source = _source_digest()
         computation_commit = _git_commit()
-        snapshot = dest / "source"
-        snapshot.mkdir(exist_ok=True)
-        for module in Path(__file__).parent.glob("*.py"):
-            (snapshot / module.name).write_bytes(module.read_bytes())
+        source_files = {
+            module.name: module.read_bytes()
+            for module in Path(__file__).parent.glob("*.py")
+        }
         data, meta = compute(
             name,
             profile,
@@ -606,6 +606,10 @@ def run(name, output, *, profile="quick", redraw=False, jobs=1):
         )
         if any(not np.isfinite(v).all() for v in data.values()):
             raise RuntimeError("Nonfinite experiment data")
+        snapshot = dest / "source"
+        snapshot.mkdir(exist_ok=True)
+        for filename, content in source_files.items():
+            (snapshot / filename).write_bytes(content)
         grids = {
             key: {
                 "start": float(value[0]),

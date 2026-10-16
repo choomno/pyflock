@@ -81,6 +81,17 @@ width with eight intervals. Runs reject cases whose coarsening change exceeds
 The JSON reports changes when every second time sample is discarded; this checks
 sampling sensitivity separately from the asymptotic errors being plotted.
 
+### Published parameter grid
+
+![Published-grid convergence](img/convergence_paper.png)
+
+The completed 360-case run uses the paper profile. At $N=3200$, averaging over
+both boundaries and all parameter pairs gives relative errors of 0.73% in the
+first amplitude, 0.50% in the first full period, and 2.34% in attenuation.
+The largest coarsening change over all cases is below $4\times10^{-5}$ in
+prediction-normalized units. These are numerical comparisons with the conditional
+asymptotic formulas; no fitted convergence rate is asserted.
+
 ## Redraw and validation
 
 `--redraw` checks the saved data checksum and renders from arrays without running

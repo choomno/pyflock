@@ -117,3 +117,22 @@ def test_convergence_trace_can_be_reanalysed_and_checkpoint_checked(
     saved.write_bytes(saved.read_bytes() + b"bad")
     with pytest.raises(AssertionError, match="cache missed"):
         E._convergence_case(spec)
+
+
+def test_failed_recomputation_preserves_previous_source_record(tmp_path, monkeypatch):
+    E.run("dispersion", tmp_path)
+    dest = tmp_path / "dispersion"
+    source = dest / "source/dispersion.py"
+    source.write_bytes(source.read_bytes() + b"\n# Earlier archived source.\n")
+    meta = json.loads((dest / "experiment.json").read_text())
+    meta["source_sha256"] = E._source_digest(dest / "source")
+    (dest / "experiment.json").write_text(json.dumps(meta))
+
+    def failed(*args, **kwargs):
+        raise RuntimeError("Failed experiment")
+
+    monkeypatch.setattr(E, "compute", failed)
+    with pytest.raises(RuntimeError, match="Failed experiment"):
+        E.run("dispersion", tmp_path)
+    # The previous result can still be drawn, with its own matching source record.
+    E.run("dispersion", tmp_path, redraw=True)
