@@ -4,7 +4,6 @@ Each name below runs through `python -m pyflock.experiments NAME --profile paper
 --output figures-expanded`. Add `--redraw` to use saved arrays. The source record
 states the parameters, measurements, numerical checks, and departures from the
 paper. See [coverage](coverage.md) and [source corrections](numerical-notes.md).
-The [figure review record](figure-review.json) identifies the inspected exports.
 
 ## Published nearest-neighbour examples
 
@@ -119,12 +118,9 @@ $V=\langle g_v/g_x\rangle$.
 ![Damping and force-driven energy](img/energy.png)
 
 `energy`: damping singular values, a unit-$L^2$ interior-force response, and total
-kinetic-plus-spacing energy. A second, distributed forcing gives a numerical
-counterexample to the source's equation (7): final energy exceeds its bound by
-7.26%. Independent integration in momentum and spacing coordinates confirms the
-violation. A nearby exact polynomial witness is now certified in rational
-arithmetic. The [proof](energy-bound-counterexamples.pdf) checks the theorem's
-hypotheses; the [numerical notes](numerical-notes.md) describe the original experiment.
+kinetic-plus-spacing energy. A constructed distributed force gives a final energy
+7.26% above the source's equation (7) bound. Independent integration checks this
+numerical comparison; see [Numerical notes](numerical-notes.md).
 
 ![Controlled continuum limit](img/continuum.png)
 

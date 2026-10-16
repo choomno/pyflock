@@ -23,7 +23,7 @@ Sizes refer to `--profile paper`. Figure numbers use the archived manuscripts in
 | Lyons thesis, Figs. 8–17 | `lyons_boundary`, `lyons_response` | Boundary arrays of 400/1,600 agents; response arrays of 400, three samples/family. Thesis gain distributions with new saved samples. Spectra sample the origin only. Negative-asymmetry wave overlays formally extrapolate outside the stability hypothesis. |
 | Lyons thesis, Figs. 12–14 | `lyons_stability_reversal` | New explicit repeated two-agent cell at 64 agents recovers the reported unstable-circle/stable-path behavior. Full finite spectra and a path Lyapunov check; original gain arrays remain unavailable. |
 | Lyons, Remark 2.8.1 and Appendix E | `lyons_ordering` | New repeated-cell, ordering and equivalent-homogeneous comparisons; one realization. |
-| Herman–Knorn–Ahlén, Eqs. (3)–(9), Lemma 6 | `energy` | Source audit, singular-value scaling and force response. Analytic and exact-rational counterexamples refute Theorem 4(iii), Eq. (7)'s finite coefficient, including with zero initial state; this does not refute the scaling result. |
+| Herman–Knorn–Ahlén, Eqs. (3)–(9), Lemma 6 | `energy` | Source damping matrices, singular-value scaling and force response. Adds a constructed distributed-force numerical comparison with Eq. (7); this does not establish the asymptotic scaling. |
 | Lyons, Appendix H | `continuum` | New controlled symmetric periodic specialization at fixed physical wavelength; it does not establish the general heuristic PDE limit. |
 
 Records separate numerical sensitivity, sample variation and asymptotic error.
@@ -31,7 +31,6 @@ Harmonic peaks are sampled; partial spectra do not establish full stability.
 NNN measurement windows and the Type II identity $T_1=A/v_0$ are explicit
 adaptations. See [numerical notes](numerical-notes.md).
 
-Remaining gaps include unavailable historical ensembles and seeds, Cantos's
-master's full text, omitted schematics, the general PDE problem, and experiments
-in other papers outside the agreed expanded scope. Path-wave comparisons retain
+Remaining gaps include unavailable historical ensembles and seeds, omitted
+schematics, and the general PDE problem. Path-wave comparisons retain
 the hypotheses and conjectural steps in [Model](model.md).
