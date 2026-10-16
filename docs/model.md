@@ -63,7 +63,7 @@ c_\pm=-\frac{I_{v,1}}2
 \pm\sqrt{\frac{I_{v,1}^2}{4}+\frac{I_{x,2}}2}.
 $$
 
-Thus phase velocity is $-\operatorname{Im}\lambda/\theta$.
+Thus phase velocity is $-\Im\lambda/\theta$.
 In the historical MATLAB naming, `fm` is $-c_+$ and `fp` is $-c_-$;
 `qm` is $-D_+$ and `qp` is $-D_-$, respectively.
 Retaining the quadratic term gives the formal envelope equation
