@@ -79,3 +79,51 @@ and why computed eigenvalues may be sensitive to perturbations.
 The original programs record parameter choices and implementation history.
 Their boundary rules and numerical outputs are comparison material; the
 equations and independent numerical checks determine the reconstruction.
+
+## Theses and related work
+
+The [coverage map](coverage.md) records which published experiments have been
+implemented. The source search was expanded in October 2026; the following
+additions inform the next experiments. The [source catalogue](literature.json)
+records exact versions, download URLs, checksums, and the extent of reading.
+
+- **Robert G. Lyons, *Linear Nearest Neighbor Flocks With All Distinct Agents*,
+  PhD dissertation, Portland State University (2022).**
+  [PSU record](https://pdxscholar.library.pdx.edu/open_access_etds/5903/).
+  The full dissertation was retrieved. Section 2.8 studies heterogeneous gains
+  and asymmetric velocity coupling; Appendix E revisits the identical-agent
+  calculation and Appendix H the PDE analogue. The archive's
+  `AllDistinctAgents.pdf` is the shorter 2021 journal manuscript.
+- **Carlos Cantos, *Control of Transients in Newtonian Networks*, mathematics
+  master's work, PSU (2012/13).** The title and supervision are listed in
+  [Veerman's CV](https://web.pdx.edu/~veerman/cvA.pdf), p. 22. A public full-text
+  copy has not been located. The PSU-hosted
+  [2014 Transients preprint](https://pdxscholar.library.pdx.edu/mth_fac/124/)
+  and [2016 article](https://pdxscholar.library.pdx.edu/mth_fac/168/)
+  are identified separately; neither is labelled as the thesis.
+- **Ivo Herman, *Scaling in vehicle platoons* (May 2016),** and **Dan Martinec,
+  *Travelling Waves in Distributed Control* (December 2015),** CTU dissertations.
+  [Herman](https://support.dce.felk.cvut.cz/mediawiki/images/d/d1/Diz_2017_herman_ivo.pdf),
+  [Martinec](https://wiki.control.fel.cvut.cz/mediawiki/images/9/9d/Diz_2016_martinec_dan.pdf).
+  Retrieved copies were inspected selectively: Herman's Chapter 5 discusses
+  different Laplacians and the circle-to-path assumptions; Martinec's Chapters
+  2–4 give wave transfer and endpoint reflection descriptions. Dates here follow
+  the title pages, which differ from the server filenames.
+
+Three missing papers were retrieved as identified arXiv preprints:
+[symmetric positional coupling](https://arxiv.org/abs/1603.06970),
+[proportional asymmetry](https://arxiv.org/abs/1410.3943), and
+[wave absorption](https://arxiv.org/abs/1311.2095).
+Their hypotheses distinguish spectral stability, disturbance amplification, and
+the chosen input/output response. Full proofs and experiments remain to be audited.
+
+Two useful papers were already present under their supplied filenames:
+
+| Archive filename | Work |
+| --- | --- |
+| `ThirdOrderSystem.pdf` | Herman, Martinec and Veerman, *Transients of platoons with asymmetric and different Laplacians* (2016). |
+| `1-s2.0-S0005109817301838-main.pdf` | Herman, Knorn and Ahlén, *Disturbance scaling in bidirectional vehicle platoons with different asymmetry in position and velocity coupling* (2017), [DOI](https://doi.org/10.1016/j.automatica.2017.04.010). |
+
+The latter proves force-disturbance energy bounds under its own boundary and
+coupling assumptions. These bounds do not establish the individual tail-extremum
+formulas or a general circle-to-path approximation.

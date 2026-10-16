@@ -46,6 +46,8 @@ The larger run checkpoints each parameter case and resumes matching results on
 rerun. Reduce `--jobs` to limit CPU use.
 
 See the [gallery](docs/gallery.md) for the question and interpretation of each figure.
+The [coverage map](docs/coverage.md) records adaptations and omitted experiments;
+this is a selected suite, not a complete reproduction of the literature.
 
 ## Model
 

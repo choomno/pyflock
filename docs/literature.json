@@ -1,0 +1,204 @@
+{
+  "schema_version": 1,
+  "checked_on": "2026-10-16",
+  "scope": "Selected supplements to the supplied flocks archive. Sources were checked against local titles; this is not an exhaustive literature review. File paths are relative to the separate references download collection.",
+  "downloaded": [
+    {
+      "file": "papers/martinec-herman-sebek-2016-symmetric-positional-coupling.pdf",
+      "title": "On the necessity of symmetric positional coupling for string stability",
+      "authors": [
+        "Dan Martinec",
+        "Ivo Herman",
+        "Michael Šebek"
+      ],
+      "arxiv_version": "1603.06970v1",
+      "version_date": "2016-03-22",
+      "source": "https://arxiv.org/abs/1603.06970",
+      "download": "https://arxiv.org/pdf/1603.06970v1",
+      "related_publication_doi": "10.1109/TCNS.2016.2573739",
+      "pages": 10,
+      "relevance": "Wave-transfer conditions for local and path string instability under unequal positional gains; distinguishes string instability from finite-system spectral instability.",
+      "read_scope": "Abstract, introduction, Assumption 1, Definitions 1–5, Theorems 1–3, Lemma 4 and selected simulations. Rendered page 5 inspected. Proofs not independently audited.",
+      "sha256": "69b7982bb052cf32423d78e497365e017ce2dddcdd0ff9f05b9a3def06a07239",
+      "bytes": 548768,
+      "kind": "preprint"
+    },
+    {
+      "file": "papers/herman-et-al-2017-scaling-proportional-asymmetry.pdf",
+      "title": "Scaling in bidirectional platoons with dynamic controllers and proportional asymmetry",
+      "authors": [
+        "Ivo Herman",
+        "Dan Martinec",
+        "Zdeněk Hurák",
+        "Michael Šebek"
+      ],
+      "arxiv_version": "1410.3943v3",
+      "version_date": "2016-01-19",
+      "source": "https://arxiv.org/abs/1410.3943",
+      "download": "https://arxiv.org/pdf/1410.3943v3",
+      "related_publication_doi": "10.1109/TAC.2016.2594169",
+      "publication": "IEEE Transactions on Automatic Control 62(4), 2034–2040 (2017)",
+      "publication_metadata_source": "https://aa4cc.dce.fel.cvut.cz/archiv/content/scaling-bidirectional-platoons-dynamic-controllers-and-proportional-asymmetry.html",
+      "pages": 7,
+      "relevance": "Transfer-gain lower bounds when position and velocity channels share proportional asymmetry; useful comparator for independently chosen asymmetries. Upstream/downstream and DC-gain qualifications matter.",
+      "read_scope": "Abstract, introduction, Theorem 2 with neighboring scaling qualifications, and conclusions. Rendered page 4 inspected. Appendix proofs not independently audited.",
+      "sha256": "bf4b5738e7a112d5ea6a33fcba564f4e7dc3c8ff57c0bab7090dd7340b0944f8",
+      "bytes": 995176,
+      "kind": "preprint"
+    },
+    {
+      "file": "papers/martinec-et-al-2014-wave-absorbing-controller.pdf",
+      "title": "Wave-absorbing vehicular platoon controller",
+      "authors": [
+        "Dan Martinec",
+        "Ivo Herman",
+        "Zdeněk Hurák",
+        "Michael Šebek"
+      ],
+      "arxiv_version": "1311.2095v1",
+      "version_date": "2013-11-08",
+      "source": "https://arxiv.org/abs/1311.2095",
+      "download": "https://arxiv.org/pdf/1311.2095v1",
+      "related_publication_doi": "10.1016/j.ejcon.2014.06.001",
+      "publication": "European Journal of Control 20 (2014), 237–248",
+      "pages": 13,
+      "relevance": "Explicit forced-end and free-end wave reflection relations; motivates measuring incident and reflected waves and treating active absorption as a distinct boundary model.",
+      "read_scope": "Abstract, Sections 4.1–4.2 reflection equations, Section 5 controller context, and selected Section 6 figures/headings. Rendered page 5 inspected. Controller not reproduced and proofs not independently audited.",
+      "sha256": "e0a2e30735f2a70512803f24be0d90d3237d5d1e833ea8c92457da6806301f99",
+      "bytes": 358377,
+      "kind": "preprint"
+    },
+    {
+      "title": "Transients in the Synchronization of Oscillator Arrays",
+      "authors": [
+        "Carlos E. Cantos",
+        "J. J. P. Veerman"
+      ],
+      "kind": "preprint",
+      "repository_date": "2014-10",
+      "file": "papers/cantos-veerman-2014-transients-preprint.pdf",
+      "source": "https://pdxscholar.library.pdx.edu/mth_fac/124/",
+      "download": "https://pdxscholar.library.pdx.edu/cgi/viewcontent.cgi?article=1124&context=mth_fac",
+      "relevance": "Earlier two-author manuscript, retained separately from the three-author 2016 article already in the archive. Not identified as the master’s thesis.",
+      "read_scope": "Title, author/repository information, structure and selected definitions; not fully compared with the 2016 manuscript.",
+      "sha256": "60a72e599800cd52c10b78ba985a3e26c3f026f9a8ed28ec4ede2fdde03797d1",
+      "bytes": 731832,
+      "pages": 12
+    },
+    {
+      "title": "Linear Nearest Neighbor Flocks With All Distinct Agents",
+      "authors": [
+        "Robert G. Lyons"
+      ],
+      "kind": "dissertation",
+      "year": 2022,
+      "file": "theses/lyons-2022-linear-nearest-neighbor-flocks.pdf",
+      "source": "https://pdxscholar.library.pdx.edu/open_access_etds/5903/",
+      "download": "https://pdxscholar.library.pdx.edu/cgi/viewcontent.cgi?article=6975&context=open_access_etds",
+      "doi": "10.15760/etd.7774",
+      "relevance": "Heterogeneous nearest-neighbour arrays: each agent has distinct position and velocity coupling magnitudes; low-frequency eigenvalue asymptotics using generalized periodic boundaries, stability conditions, and comparison with simulated flocks. Extends the homogeneous reconstruction to heterogeneous agents.",
+      "read_scope": "Read thesis section 2.8 (printed pp.83–95), sections 2.9 and 2.9.1 (pp.95–97), Appendix E (pp.119–120), Appendix H (pp.130–134); consulted section 2.5 definitions and boundary conventions in 2.6 (pp.75–80). Visually inspected Figures8,12,13,16,17 (PDF pp.94,98,101,102). Compared to the local 17-page journal manuscript simulation section6 (pp.12–16). Full thesis not read end to end; derivations not independently verified.",
+      "sha256": "9e7cd9a8f934be68c90dad0990f5fcdb5f06d097e7ac2ee0a0938698da9d9f52",
+      "bytes": 1786044,
+      "pages": 143
+    },
+    {
+      "title": "Scaling in vehicle platoons",
+      "authors": [
+        "Ivo Herman"
+      ],
+      "kind": "dissertation",
+      "document_date": "2016-05",
+      "file": "theses/herman-2016-scaling-in-vehicle-platoons.pdf",
+      "source": "https://support.dce.felk.cvut.cz/mediawiki/images/d/d1/Diz_2017_herman_ivo.pdf",
+      "relevance": "Different position and velocity Laplacians, disturbance scaling and controller comparisons. Date follows title page rather than server filename.",
+      "read_scope": "Title page, abstract, contents, Chapter 5 introduction and section 5.1 assumptions. Printed page133 visually inspected. Full proofs and experiments not audited.",
+      "sha256": "1f035f155b3c71f671e6e2a9e63a9d1006ca957ac65e9511afd446189ce44bf9",
+      "bytes": 4529409,
+      "pages": 214
+    },
+    {
+      "title": "Travelling Waves in Distributed Control",
+      "authors": [
+        "Dan Martinec"
+      ],
+      "kind": "dissertation",
+      "document_date": "2015-12",
+      "file": "theses/martinec-2015-travelling-waves-in-distributed-control.pdf",
+      "source": "https://wiki.control.fel.cvut.cz/mediawiki/images/9/9d/Diz_2016_martinec_dan.pdf",
+      "relevance": "Wave transfer functions, reflection at endpoints, heterogeneous interfaces, and wave absorption. Date follows title page rather than server filename.",
+      "read_scope": "Title page, abstract, contents, selected Chapter 4 wave decomposition/verification and Theorem10, conclusions/open problems. Printed page110 visually inspected. Full proofs and experiments not audited.",
+      "sha256": "65bf4770ce2354c9b222ece131206aa4fd4a717bdd0f808f0dcd7a258f03550a",
+      "bytes": 2392090,
+      "pages": 187
+    }
+  ],
+  "unlocated": [
+    {
+      "title": "Control of Transients in Newtonian Networks",
+      "author": "Carlos Cantos",
+      "institution": "Portland State University",
+      "reported_year": "2012/13",
+      "status": "Title and supervision verified; no full-text thesis located.",
+      "metadata_source": "https://web.pdx.edu/~veerman/cvA.pdf",
+      "metadata_locator": "Printed page22, master’s thesis advisor list",
+      "search_scope": [
+        "Exact title and author searches on the public web",
+        "PSU mathematics graduate-work collection and faculty publication listings",
+        "Live PDXScholar repository search author:Cantos: three records, all papers; no thesis record returned",
+        "PSU 501 project guidelines link to department-shared Google Drive https://drive.google.com/drive/folders/13iyvg6UMzeo-iSbkNChRPfpoF85mXpzU. The normal browser opened a Google sign-in page; contents not inspected. No inference made that this thesis is stored there."
+      ],
+      "verified_psu_records": [
+        {
+          "title": "Transients in the Synchronization of Oscillator Arrays",
+          "year": 2014,
+          "url": "https://pdxscholar.library.pdx.edu/mth_fac/124/"
+        },
+        {
+          "title": "Signal Velocity in Oscillator Arrays",
+          "year": 2016,
+          "url": "https://pdxscholar.library.pdx.edu/mth_fac/126/"
+        },
+        {
+          "title": "Transients in the Synchronization of Asymmetrically Coupled Oscillator Arrays",
+          "year": 2016,
+          "url": "https://pdxscholar.library.pdx.edu/mth_fac/168/"
+        }
+      ]
+    }
+  ],
+  "already_in_archive": [
+    {
+      "title": "Disturbance scaling in bidirectional vehicle platoons with different asymmetry in position and velocity coupling",
+      "authors": [
+        "Ivo Herman",
+        "Steffi Knorn",
+        "Anders Ahlén"
+      ],
+      "publication": "Automatica 82 (2017), 13–20",
+      "doi": "10.1016/j.automatica.2017.04.010",
+      "local_archive_filename": "1-s2.0-S0005109817301838-main.pdf",
+      "source": "https://arxiv.org/abs/1604.00868",
+      "author_pdf": "https://www.steffi-knorn.de/wp-uploads/herman2017.pdf",
+      "read_scope": "Introduction, model/assumptions, Theorem 4, Lemma 6, Theorem 9 and Remark 10, stability-region qualifications. No full proof audit.",
+      "interpretive_limit": "Energy bounds for force disturbances and specific boundary conditions do not prove individual tail-extremum formulas or a general circle-to-path approximation."
+    },
+    {
+      "archive_filename": "ThirdOrderSystem.pdf",
+      "title": "Transients of platoons with asymmetric and different Laplacians",
+      "authors": [
+        "Ivo Herman",
+        "Dan Martinec",
+        "J. J. P. Veerman"
+      ],
+      "year": 2016
+    },
+    {
+      "archive_filename": "AllDistinctAgents.pdf",
+      "title": "Linear Nearest Neighbor Flocks with All Distinct Agents",
+      "year": 2021,
+      "doi": "10.1140/epjb/s10051-021-00163-2",
+      "source": "https://pdxscholar.library.pdx.edu/mth_fac/331/"
+    }
+  ]
+}

@@ -6,6 +6,10 @@ The JSON record contains the complete stencils, initialization, boundary rule,
 source reference, software versions and checksums. The figures below are checked
 previews; they can be regenerated with the same commands.
 
+These are selected demonstrations and adapted comparisons. The
+[coverage map](coverage.md) lists the corresponding published experiments and
+the major omissions.
+
 ## Propagation and reflection
 
 ![Propagation](img/propagation.png)
@@ -34,7 +38,7 @@ step are described in [Model and conventions](model.md).
 
 `boundary`: the historical circle-stable/path-unstable NNN example, with
 80 followers and the `drop` boundary. A separate panel resolves eigenvalues near zero.
-The middle panel shows the early spacing field; the last shows the maximum
+The lower-left panel shows the early spacing field; the lower-right shows the maximum
 leader-relative displacement over agents, on a logarithmic scale. Separating the
 time windows keeps late growth from obscuring the early response. This is a direct
 finite-system computation, with no reflected-amplitude overlay. The sensitivity
