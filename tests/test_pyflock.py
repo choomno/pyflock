@@ -1,4 +1,5 @@
 """Validation of pyflock against the original MATLAB conventions and against theory."""
+
 import numpy as np
 import pytest
 from scipy.linalg import expm
@@ -38,7 +39,7 @@ def test_branches_solve_the_quadratic():
     th = np.linspace(-np.pi, np.pi, 401)
     for lab in ("continuous", "by_imag"):
         lam = pf.branches(th, st, labelling=lab)
-        res = lam ** 2 - pf.nu_v(th, st) * lam - pf.nu_x(th, st)
+        res = lam**2 - pf.nu_v(th, st) * lam - pf.nu_x(th, st)
         assert np.max(np.abs(res)) < 1e-10
 
 
@@ -68,8 +69,13 @@ def test_branches_match_circle_eigenvalues():
 
 def test_taylor_matches_matlab_closed_forms():
     """f_sigma = mu_sigma and q_sigma = -D_sigma, as computed in flock45sim_function.m."""
-    for name in ("random_example", "two_positive_velocities", "small_positive_loop",
-                 "nonsymmetric_att1", "different_reflections_p1"):
+    for name in (
+        "random_example",
+        "two_positive_velocities",
+        "small_positive_loop",
+        "nonsymmetric_att1",
+        "different_reflections_p1",
+    ):
         st = pf.case(name)
         if st.a <= 0:
             continue
@@ -88,14 +94,18 @@ def test_nn_closed_forms():
     for q in (-0.6, 0.0, 0.35, 0.8):
         gx, gv = -1.3, -0.9
         st = pf.nn_stencil(gx, gv, -0.5, (q - 1) / 2)
-        a = gv ** 2 * q ** 2 / 4 - gx / 2
+        a = gv**2 * q**2 / 4 - gx / 2
         assert st.a == pytest.approx(a)
         cp, cm = pf.signal_velocities(st)
         assert cp == pytest.approx(-gv * q / 2 + np.sqrt(a))
         assert cm == pytest.approx(-gv * q / 2 - np.sqrt(a))
         co = pf.coefficients(st)
-        assert co["+"]["D"] == pytest.approx(-gv / 4 + gv ** 2 * q / (8 * np.sqrt(a)), abs=1e-8)
-        assert co["-"]["D"] == pytest.approx(-gv / 4 - gv ** 2 * q / (8 * np.sqrt(a)), abs=1e-8)
+        assert co["+"]["D"] == pytest.approx(
+            -gv / 4 + gv**2 * q / (8 * np.sqrt(a)), abs=1e-8
+        )
+        assert co["-"]["D"] == pytest.approx(
+            -gv / 4 - gv**2 * q / (8 * np.sqrt(a)), abs=1e-8
+        )
 
 
 def test_diffusion_is_positive_for_stable_systems():
@@ -109,10 +119,10 @@ def test_diffusion_is_positive_for_stable_systems():
 def test_line_matrix_drop_matches_flock45_second_version():
     """Hard-coded against the live boundary rows of flock45.m."""
     r = np.array([0.11, -0.37, 1.0, -0.53, 0.79])
-    r = r - r.sum() / 5.0                      # make it decentralized
+    r = r - r.sum() / 5.0  # make it decentralized
     N = 9
     L = pf.laplacian_line(r, N, bc="drop")
-    assert np.allclose(L[0], 0.0)                                    # leader row
+    assert np.allclose(L[0], 0.0)  # leader row
     assert L[1, 0] == pytest.approx(r[1])
     assert L[1, 1] == pytest.approx(-(r[1] + r[3] + r[4]))
     assert L[1, 2] == pytest.approx(r[3])
@@ -124,9 +134,9 @@ def test_line_matrix_drop_matches_flock45_second_version():
     assert L[N, N - 2] == pytest.approx(r[0])
     assert L[N, N - 1] == pytest.approx(r[1])
     assert L[N, N] == pytest.approx(-(r[0] + r[1]))
-    for k in range(3, N - 1):                                        # interior
-        assert np.allclose(L[k, k - 2:k + 3], r)
-    assert np.allclose(L[1:].sum(axis=1), 0.0)                       # zero row sums
+    for k in range(3, N - 1):  # interior
+        assert np.allclose(L[k, k - 2 : k + 3], r)
+    assert np.allclose(L[1:].sum(axis=1), 0.0)  # zero row sums
 
 
 def test_line_matrix_fold_matches_flock45_first_version():
@@ -205,12 +215,13 @@ def test_symmetric_flock_matches_theorem_3_to_leading_order():
     st = pf.nn_stencil(-1.0, -1.0, -0.5, -0.5)
     cp, _ = pf.signal_velocities(st)
     for N, tol in ((100, 0.11), (400, 0.04)):
-        res = pf.simulate_line(st, N, tmax=1.6 * N / cp, nt=int(40 * 1.6 * N / cp),
-                               bc="regular")
+        res = pf.simulate_line(
+            st, N, tmax=1.6 * N / cp, nt=int(40 * 1.6 * N / cp), bc="regular"
+        )
         s = pf.transient_summary(res.t, res.last_relative, nmax=1)
         A1 = abs(s["A"][0])
         assert abs(A1 - N / cp) / A1 < tol
-        assert A1 < N / cp                      # diffusion always reduces the overshoot
+        assert A1 < N / cp  # diffusion always reduces the overshoot
 
 
 def test_theory_amplitudes_are_self_consistent():
@@ -244,9 +255,9 @@ def test_type_I_is_asymptotically_unstable_on_the_line():
         ev = np.linalg.eigvals(pf.system_matrix_line(st, N, bc="drop"))
         worst.append(ev.real.max())
     assert all(w > 0 for w in worst), worst
-    assert all(a > b for a, b in zip(worst, worst[1:])), worst          # decreasing
+    assert all(a > b for a, b in zip(worst, worst[1:])), worst  # decreasing
     scaled = [w * N for w, N in zip(worst, (20, 40, 60, 80))]
-    assert max(scaled) / min(scaled) < 2.0, scaled                      # roughly ~ 1/N
+    assert max(scaled) / min(scaled) < 2.0, scaled  # roughly ~ 1/N
 
 
 # --------------------------------------------------------- eigenvalue reliability
@@ -267,7 +278,8 @@ def test_eigen_reliability_separates_well_and_ill_conditioned_cases():
     good = pf.eigen_reliability(pf.system_matrix_line_leaderless(pf.case("type_I"), 60))
     assert good["reliable"] and good["kappa"] < 1e3 and good["eigenvalue"].real > 0
     bad = pf.eigen_reliability(
-        pf.system_matrix_line_leaderless(pf.case("two_positive_velocities"), 60))
+        pf.system_matrix_line_leaderless(pf.case("two_positive_velocities"), 60)
+    )
     assert bad["kappa"] > 1e10 and not bad["reliable"]
 
 
@@ -283,40 +295,48 @@ def test_least_stable_eigenvalue_wave_form_matches_numerics():
             for q in (-0.4, 0.0, 0.3, 0.8):
                 st = pf.nn_stencil(gx, gv, -0.5, (q - 1) / 2)
                 assert pf.least_stable_eigenvalue(st, N) == pytest.approx(
-                    _line_max_re(st, N, bc), rel=0.01), (gx, gv, bc, q)
+                    _line_max_re(st, N, bc), rel=0.01
+                ), (gx, gv, bc, q)
 
 
 def test_least_stable_linear_form_is_the_small_asymmetry_limit():
     N = 300
-    exact0 = -2.0 * np.pi ** 2 / (16 * N ** 2)
+    exact0 = -2.0 * np.pi**2 / (16 * N**2)
     st0 = pf.nn_stencil(-1.0, -2.0, -0.5, -0.5)
     assert pf.least_stable_eigenvalue(st0, N) == pytest.approx(exact0, rel=1e-5)
-    assert pf.least_stable_eigenvalue(st0, N, method="linear") == pytest.approx(exact0, rel=1e-12)
+    assert pf.least_stable_eigenvalue(st0, N, method="linear") == pytest.approx(
+        exact0, rel=1e-12
+    )
     for q in (-0.01, 0.01):
         st = pf.nn_stencil(-1.0, -2.0, -0.5, (q - 1) / 2)
         assert pf.least_stable_eigenvalue(st, N) == pytest.approx(
-            pf.least_stable_eigenvalue(st, N, method="linear"), rel=5e-3)
-    d = pf.least_stable_eigenvalue(pf.nn_stencil(-1.0, -2.0, -0.5, -0.4), N, detail=True)
+            pf.least_stable_eigenvalue(st, N, method="linear"), rel=5e-3
+        )
+    d = pf.least_stable_eigenvalue(
+        pf.nn_stencil(-1.0, -2.0, -0.5, -0.4), N, detail=True
+    )
     assert d["total"] == pytest.approx(d["reflection_term"] + d["diffusion_term"])
     assert d["diffusion_term"] < 0.0
 
 
 def test_least_stable_eigenvalue_rejects_stencils_it_does_not_cover():
-    with pytest.raises(ValueError):      # asymmetric position coupling
+    with pytest.raises(ValueError):  # asymmetric position coupling
         pf.least_stable_eigenvalue(pf.nn_stencil(-1.0, -1.0, -0.3, -0.3), 100)
-    with pytest.raises(ValueError):      # next-nearest neighbour
+    with pytest.raises(ValueError):  # next-nearest neighbour
         pf.least_stable_eigenvalue(pf.case("type_I"), 100)
-    with pytest.raises(ValueError):      # unstable gains
+    with pytest.raises(ValueError):  # unstable gains
         pf.least_stable_eigenvalue(pf.nn_stencil(1.0, -1.0, -0.5, -0.5), 100)
     with pytest.raises(ValueError):
-        pf.least_stable_eigenvalue(pf.nn_stencil(-1.0, -1.0, -0.5, -0.5), 100, method="bogus")
+        pf.least_stable_eigenvalue(
+            pf.nn_stencil(-1.0, -1.0, -0.5, -0.5), 100, method="bogus"
+        )
 
 
 def test_critical_velocity_asymmetry_separates_stable_from_unstable():
     fam = pf.velocity_asymmetry_family(-1.0, -3.0)
     for N in (80, 240):
         qc = pf.critical_velocity_asymmetry(-1.0, -3.0, N)
-        assert qc == pytest.approx(-np.pi ** 2 / (8 * N), rel=0.05)
+        assert qc == pytest.approx(-(np.pi**2) / (8 * N), rel=0.05)
         assert _line_max_re(fam(qc - 0.005), N, "regular") > 0.0
         assert _line_max_re(fam(qc + 0.005), N, "regular") < 0.0
 
@@ -324,7 +344,9 @@ def test_critical_velocity_asymmetry_separates_stable_from_unstable():
 def test_stability_map_matches_theory_and_renders():
     fam = pf.velocity_asymmetry_family(-1.0, -1.0)
     qs = np.linspace(-0.1, 0.1, 9)
-    sm = pf.stability_map(fam, qs, (40, 80), bc="regular", theory=pf.least_stable_eigenvalue)
+    sm = pf.stability_map(
+        fam, qs, (40, 80), bc="regular", theory=pf.least_stable_eigenvalue
+    )
     assert sm.max_re.shape == (2, 9) and sm.theory.shape == (2, 9)
     assert sm.reliable.all()
     assert np.allclose(sm.theory, sm.max_re, rtol=0.05, atol=1e-6)
@@ -332,4 +354,5 @@ def test_stability_map_matches_theory_and_renders():
     mpl.use("Agg")
     import io
     from pyflock import plotting as P
+
     P.stability_map_figure(sm).savefig(io.BytesIO(), format="png")

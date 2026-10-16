@@ -10,3 +10,5 @@ venv/
 
 # regenerate with: python examples/figures.py
 figures/
+figures-paper/
+figures-resolved/

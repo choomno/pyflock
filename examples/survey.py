@@ -1,20 +1,19 @@
-"""Classify every curated case: circle vs line stability, signal velocities, diffusion."""
-import numpy as np, pyflock as pf
+"""Finite-system spectra for the historical cases; sensitivity is not a certificate."""
 
-hdr = (f"{'case':<28}{'a':>9}{'circle maxRe*':>14}{'line maxRe':>12}"
-       f"{'c_+':>9}{'c_-':>9}{'D_+':>9}{'D_-':>9}")
-print(hdr); print("-" * len(hdr))
-for name in pf.case_names():
-    st = pf.case(name)
-    ev_c = np.linalg.eigvals(pf.system_matrix_circle(st, 120)).real
-    circ = np.sort(ev_c)[-3]                     # exclude the double zero
-    rel = pf.eigen_reliability(pf.system_matrix_line_leaderless(st, 60, bc="drop"))
-    line = rel["eigenvalue"].real
-    if st.a > 0:
-        cp, cm = pf.signal_velocities(st)
-        co = pf.coefficients(st)
-        cols = f"{cp:9.4f}{cm:9.4f}{co['+']['D']:9.4f}{co['-']['D']:9.4f}"
-    else:
-        cols = f"{'--':>9}{'--':>9}{'--':>9}{'--':>9}"
-    print(f"{name:<28}{st.a:9.4f}{circ:14.2e}{line:12.2e}{cols}")
-print("\n* third-largest real part on the circle (the double zero is excluded)")
+import numpy as np
+import pyflock as pf
+from pyflock.plotting import circle_eigenvalues
+
+if __name__ == "__main__":
+    N = 60
+    print(
+        f"{'case':30s} {'circle max Re':>14s} {'path max Re':>14s} {'sensitivity':>14s}"
+    )
+    for name in pf.case_names():
+        st = pf.case(name)
+        path = pf.system_matrix_line_leaderless(st, N, bc="drop")
+        result = pf.eigen_reliability(path)
+        print(
+            f"{name:30s} {circle_eigenvalues(st, N).real.max():+14.5g} "
+            f"{np.linalg.eigvals(path).real.max():+14.5g} {result['tol']:14.3g}"
+        )
