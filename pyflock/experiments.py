@@ -6,6 +6,7 @@ larger research run; the default profile demonstrates the same measurements.
 
 from __future__ import annotations
 import argparse
+from importlib import import_module
 from hashlib import sha256
 import json
 from pathlib import Path
@@ -22,7 +23,32 @@ from .plotting import circle_eigenvalues
 from .solve import simulate_tail
 from .style import CAT, SEQ, DIVERGING, plot_style
 
-NAMES = ("propagation", "reflection", "boundary", "dispersion", "pulse", "convergence")
+ORIGINAL_NAMES = (
+    "propagation",
+    "reflection",
+    "boundary",
+    "dispersion",
+    "pulse",
+    "convergence",
+)
+
+
+def _extensions():
+    """Discover the source-specific experiment modules shipped with the package."""
+    registry = {}
+    for path in sorted(Path(__file__).parent.glob("experiment_*.py")):
+        module = import_module(f".{path.stem}", __package__)
+        for name, handlers in module.EXPERIMENTS.items():
+            if name in registry or name in ORIGINAL_NAMES:
+                raise ValueError(f"Duplicate experiment: {name}")
+            if not {"compute", "draw"} <= handlers.keys():
+                raise ValueError(f"Incomplete experiment handlers: {name}")
+            registry[name] = handlers
+    return registry
+
+
+EXTENSIONS = _extensions()
+NAMES = (*ORIGINAL_NAMES, *EXTENSIONS)
 SOURCES = {
     "signal": "Cantos, Veerman & Hammond (2016), Signal Velocities in Oscillator Networks, EPJ ST 225, 1115–1126; manuscript Theorems 1–2.",
     "transients": "Cantos, Hammond & Veerman (2016), Transients in the Synchronization of Oscillator Arrays, EPJ ST 225, 1199–1209; manuscript Theorem 3 and Section 4.",
@@ -53,6 +79,10 @@ def _base(name):
 
 def compute(name, profile="quick", *, jobs=1, checkpoint=None):
     """Return numerical arrays and the complete experiment specification."""
+    if name in EXTENSIONS:
+        return EXTENSIONS[name]["compute"](
+            profile=profile, jobs=jobs, checkpoint=checkpoint
+        )
     meta = _base(name)
     if name == "propagation":
         st = nn_stencil(-1.0, -1.0, -0.5, -0.3)
@@ -70,7 +100,7 @@ def compute(name, profile="quick", *, jobs=1, checkpoint=None):
         )
         return line_arrays(res), meta
     if name == "reflection":
-        N = 160
+        N = 400 if profile == "paper" else 160
         arrays = {}
         specs = []
         for i, av in enumerate((-0.5, 0.0)):
@@ -83,16 +113,17 @@ def compute(name, profile="quick", *, jobs=1, checkpoint=None):
             specs.append(stencil_record(st))
         meta.update(
             N=N,
+            profile=profile,
             boundary="regular",
             stencils=specs,
             source=SOURCES["transients"],
             question="How does velocity asymmetry alter the last-follower response?",
-            relation_to_source="Figure 3 parameter comparison, reduced to N=160; normalized by N.",
+            relation_to_source=f"Figure 3 gains and weights; N={N} followers (source N=400); tail response normalized by N.",
         )
         return arrays, meta
     if name == "boundary":
         st = case("type_I")
-        N = 80
+        N = 200 if profile == "paper" else 80
         res = simulate_line(st, N, 14 * N, nt=2001, bc="drop")
         ec = circle_eigenvalues(st, N)
         matrix = system_matrix_line_leaderless(st, N, bc="drop")
@@ -103,6 +134,7 @@ def compute(name, profile="quick", *, jobs=1, checkpoint=None):
         arrays.update(circle=ec, path=np.linalg.eigvals(matrix))
         meta.update(
             N=N,
+            profile=profile,
             boundary="drop",
             stencil=stencil_record(st),
             source=SOURCES["nnn"],
@@ -110,6 +142,7 @@ def compute(name, profile="quick", *, jobs=1, checkpoint=None):
             early_window_t_over_N=[0, 3],
             spectral_sensitivity=float(reliability["tol"]),
             approximation_status="Direct finite-system calculation; no path amplitude-theory overlay.",
+            relation_to_source=f"NNN Figure 3 stencil and fixed-interaction boundary; N={N} followers (source N=200), with new spectral and growth diagnostics.",
         )
         return arrays, meta
     if name == "dispersion":
@@ -351,6 +384,10 @@ def _line_axes(fig, axs, data, meta):
 
 def draw(name, data, meta):
     """Render using only recorded data and parameters; never run a simulation."""
+    if name in EXTENSIONS:
+        return EXTENSIONS[name]["draw"](data, meta)
+    if name not in ORIGINAL_NAMES:
+        raise ValueError(f"Unknown experiment: {name}")
     import matplotlib.pyplot as plt
 
     with plot_style():
@@ -557,7 +594,7 @@ def _software():
 
     return {
         "python": platform.python_version(),
-        **{p: version(p) for p in ("numpy", "scipy", "matplotlib")},
+        **{p: version(p) for p in ("numpy", "scipy", "matplotlib", "mpmath")},
     }
 
 
@@ -583,6 +620,20 @@ def _git_commit():
         return None
 
 
+def _git_dirty():
+    try:
+        return bool(
+            subprocess.check_output(
+                ["git", "status", "--porcelain"],
+                cwd=Path(__file__).parent,
+                stderr=subprocess.DEVNULL,
+                text=True,
+            ).strip()
+        )
+    except (subprocess.CalledProcessError, FileNotFoundError):
+        return None
+
+
 def run(name, output, *, profile="quick", redraw=False, jobs=1):
     import matplotlib.pyplot as plt
 
@@ -602,6 +653,7 @@ def run(name, output, *, profile="quick", redraw=False, jobs=1):
     else:
         computation_source = _source_digest()
         computation_commit = _git_commit()
+        computation_dirty = _git_dirty()
         source_files = {
             module.name: module.read_bytes()
             for module in Path(__file__).parent.glob("*.py")
@@ -610,7 +662,7 @@ def run(name, output, *, profile="quick", redraw=False, jobs=1):
             name,
             profile,
             jobs=jobs,
-            checkpoint=dest / "cases" if name == "convergence" else None,
+            checkpoint=dest / "cases",
         )
         if any(not np.isfinite(v).all() for v in data.values()):
             raise RuntimeError("Nonfinite experiment data")
@@ -630,7 +682,7 @@ def run(name, output, *, profile="quick", redraw=False, jobs=1):
         if grids:
             meta["time_grids"] = grids
         np.savez_compressed(dest / "data.npz", **data)
-        if name == "convergence":
+        if "measurements" in data and "columns" in meta:
             np.savetxt(
                 dest / "measurements.csv",
                 data["measurements"],
@@ -638,6 +690,7 @@ def run(name, output, *, profile="quick", redraw=False, jobs=1):
                 header=",".join(meta["columns"]),
                 comments="",
             )
+        if name == "convergence":
             meta["maximum_sampling_change"] = dict(
                 zip(
                     ("A1", "T", "gamma"),
@@ -648,6 +701,7 @@ def run(name, output, *, profile="quick", redraw=False, jobs=1):
             software=_software(),
             source_sha256=computation_source,
             git_commit=computation_commit,
+            git_worktree_dirty=computation_dirty,
             data_sha256=sha256((dest / "data.npz").read_bytes()).hexdigest(),
         )
     with plot_style():
@@ -678,7 +732,7 @@ def main(argv=None):
         "--profile",
         choices=("quick", "paper"),
         default="quick",
-        help="Parameter-family convergence: small demonstration or published sizes and parameters.",
+        help="Small validation runs or published sizes and parameter families; consult each record for source departures.",
     )
     parser.add_argument(
         "--redraw",
@@ -689,7 +743,7 @@ def main(argv=None):
         "--jobs",
         type=int,
         default=1,
-        help="Parallel workers for the convergence study (default: 1).",
+        help="Parallel workers for experiments that support them (default: 1).",
     )
     args = parser.parse_args(argv)
     if args.jobs < 1:

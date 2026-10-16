@@ -8,7 +8,8 @@ previews; they can be regenerated with the same commands.
 
 These are selected demonstrations and adapted comparisons. The
 [coverage map](coverage.md) lists the corresponding published experiments and
-the major omissions.
+remaining gaps. The [expanded gallery](gallery-expanded.md) adds the published
+spectra, NNN classes, amplification, heterogeneous paths, and force-input studies.
 
 ## Propagation and reflection
 
@@ -25,8 +26,8 @@ in *Transients*; they are an asymptotic comparison.
 
 ![Last-follower comparison](img/reflection.png)
 
-`reflection`: the parameter comparison from *Transients*, Figure 3, here with
-160 followers and $g_x=g_v=-2$. Position coupling is symmetric; velocity weights
+`reflection --profile paper`: the parameter comparison from *Transients*, Figure 3,
+with 400 followers and $g_x=g_v=-2$. Position coupling is symmetric; velocity weights
 $\rho_{v,1}=-1/2$ and $0$ appear on the same vertical scale. The second case has a
 smaller first excursion and stronger attenuation. Small blue dots mark measured extrema; open diamonds mark leading predicted
 extrema. The predictions are discrete points. The hypotheses and conjectural
@@ -36,8 +37,8 @@ step are described in [Model and conventions](model.md).
 
 ![Boundary effects](img/boundary.png)
 
-`boundary`: the historical circle-stable/path-unstable NNN example, with
-80 followers and the `drop` boundary. A separate panel resolves eigenvalues near zero.
+`boundary --profile paper`: the historical circle-stable/path-unstable NNN example,
+with 200 followers and the `drop` boundary. A separate panel resolves eigenvalues near zero.
 The lower-left panel shows the early spacing field; the lower-right shows the maximum
 leader-relative displacement over agents, on a logarithmic scale. Separating the
 time windows keeps late growth from obscuring the early response. This is a direct

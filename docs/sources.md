@@ -84,7 +84,7 @@ equations and independent numerical checks determine the reconstruction.
 
 The [coverage map](coverage.md) records which published experiments have been
 implemented. The source search was expanded in October 2026; the following
-additions inform the next experiments. The [source catalogue](literature.json)
+additions inform the expanded experiments. The [source catalogue](literature.json)
 records exact versions, download URLs, checksums, and the extent of reading.
 
 - **Robert G. Lyons, *Linear Nearest Neighbor Flocks With All Distinct Agents*,
@@ -124,6 +124,9 @@ Two useful papers were already present under their supplied filenames:
 | `ThirdOrderSystem.pdf` | Herman, Martinec and Veerman, *Transients of platoons with asymmetric and different Laplacians* (2016). |
 | `1-s2.0-S0005109817301838-main.pdf` | Herman, Knorn and Ahlén, *Disturbance scaling in bidirectional vehicle platoons with different asymmetry in position and velocity coupling* (2017), [DOI](https://doi.org/10.1016/j.automatica.2017.04.010). |
 
-The latter proves force-disturbance energy bounds under its own boundary and
-coupling assumptions. These bounds do not establish the individual tail-extremum
-formulas or a general circle-to-path approximation.
+The latter studies force-disturbance energy bounds under its own boundary and
+coupling assumptions. The `energy` experiment finds a failed quadratic-form step
+in equation (8) and a numerical counterexample to the integrated bound in
+equation (7); see the [numerical notes](numerical-notes.md). These findings concern
+the printed finite coefficient; the asymptotic scaling and tail-extremum formulas
+are separate claims.

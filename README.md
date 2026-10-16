@@ -25,7 +25,7 @@ python -m pyflock.experiments all
 python -m pytest
 ```
 
-The six experiments save PDF, SVG and PNG figures, numerical arrays, and a JSON
+The experiments save PDF, SVG and PNG figures, numerical arrays, and a JSON
 record of parameters, sources, software versions and checksums under `figures/`.
 To regenerate just one, or change its appearance without recomputing:
 
@@ -42,12 +42,24 @@ followers. Run it separately with:
 python -m pyflock.experiments convergence --profile paper --jobs 4 --output figures-paper
 ```
 
-The larger run checkpoints each parameter case and resumes matching results on
-rerun. Reduce `--jobs` to limit CPU use.
+The expanded suite adds published spectral and pulse examples, NNN wave types,
+matched-coupling amplification, force disturbances, and heterogeneous arrays from
+Lyons's thesis. For example:
+
+```sh
+python -m pyflock.experiments nnn-types --profile paper --output figures-expanded
+python -m pyflock.experiments lyons_response --profile paper --jobs 2 --output figures-expanded
+python -m pyflock.experiments nnn-ensemble --profile paper --jobs 6 --output figures-expanded
+```
+
+The last command runs 24,000 cases in explicitly defined stable families. It
+matches the historical class counts, sizes and boundaries; its configurations and
+some gains differ. The larger studies checkpoint and resume matching results.
+Reduce `--jobs` to limit CPU use.
 
 See the [gallery](docs/gallery.md) for the question and interpretation of each figure.
-The [coverage map](docs/coverage.md) records adaptations and omitted experiments;
-this is a selected suite, not a complete reproduction of the literature.
+The [expanded gallery](docs/gallery-expanded.md) covers the additional experiments.
+The [coverage map](docs/coverage.md) records source fidelity and remaining gaps.
 
 ## Model
 
@@ -57,7 +69,9 @@ $$\ddot z_k=g_x\sum_j\rho_{x,j}z_{k+j}+g_v\sum_j\rho_{v,j}\dot z_{k+j}.$$
 
 Each stencil sums to zero. On a path, $N$ counts the followers; agent $0$ is the
 leader. The default experiment starts in formation and gives the leader velocity
-one. Periodic systems use $N$ total agents.
+one. Periodic systems use $N$ total agents. The heterogeneous module follows
+Lyons's convention: $N$ total agents and positive gain magnitudes with an overall
+minus sign. Its records and axes state that convention explicitly.
 
 ```python
 import pyflock as pf

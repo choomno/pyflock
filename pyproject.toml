@@ -7,7 +7,7 @@ name = "pyflock"
 version = "0.2.0"
 description = "Reproducible experiments on propagation and transients in oscillator arrays"
 requires-python = ">=3.10"
-dependencies = ["numpy>=1.24", "scipy>=1.10", "matplotlib>=3.7"]
+dependencies = ["numpy>=1.24", "scipy>=1.10", "matplotlib>=3.7", "mpmath>=1.3"]
 
 [project.optional-dependencies]
 plot = ["matplotlib>=3.7"]
