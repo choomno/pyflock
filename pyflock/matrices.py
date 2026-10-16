@@ -22,98 +22,122 @@ Boundary conventions for agents that are missing neighbours:
 
 Circle geometry: both Laplacians are circulant, built from the same stencil.
 """
+
 from __future__ import annotations
 
 import numpy as np
+from scipy import sparse as sp
 
 from .stencil import Stencil
 
-__all__ = ["laplacian_line", "laplacian_circle", "system_matrix_line",
-           "system_matrix_line_leaderless", "system_matrix_circle", "BOUNDARY_CONDITIONS"]
+__all__ = [
+    "laplacian_line",
+    "laplacian_circle",
+    "system_matrix_line",
+    "system_matrix_line_leaderless",
+    "system_matrix_circle",
+    "BOUNDARY_CONDITIONS",
+]
 
 BOUNDARY_CONDITIONS = ("drop", "fold", "regular")
 _OFFSETS = (-2, -1, 0, 1, 2)
 
 
-def laplacian_line(r: np.ndarray, N: int, bc: str = "drop", leader: bool = True) -> np.ndarray:
+def _check_size(N):
+    if isinstance(N, (bool, np.bool_)) or not isinstance(N, (int, np.integer)) or N < 1:
+        raise ValueError("N must be a positive integer")
+
+
+def _weights(r):
+    r = np.asarray(r, dtype=float)
+    if r.shape != (5,) or not np.isfinite(r).all():
+        raise ValueError("weights must be a finite vector of length 5")
+    return r
+
+
+def laplacian_line(
+    r: np.ndarray,
+    N: int,
+    bc: str = "drop",
+    leader: bool = True,
+    *,
+    sparse: bool = False,
+):
     """(N+1) x (N+1) Laplacian for agents 0..N on the line.
 
     If ``leader`` is True, row 0 is left identically zero (agent 0 is driven externally).
+    ``sparse=True`` returns a CSR matrix with O(N) stored entries.
     """
-    r = np.asarray(r, dtype=float)
+    _check_size(N)
+    r = _weights(r)
     n = N + 1
-    L = np.zeros((n, n))
     if bc not in BOUNDARY_CONDITIONS:
         raise ValueError(f"bc must be one of {BOUNDARY_CONDITIONS}, got {bc!r}")
+    if bc == "regular" and (abs(r[0]) > 1e-12 or abs(r[4]) > 1e-12):
+        raise ValueError("bc='regular' is defined for nearest-neighbour stencils only")
+    rows, cols, data = [], [], []
+
+    def add(k, m, value):
+        rows.append(k)
+        cols.append(m)
+        data.append(value)
 
     first = 1 if leader else 0
     for k in range(first, n):
+        if bc == "fold" and k == N and n >= 3 and abs(r[0] + r[1]) > 1e-12:
+            sx = abs(1.0 / (r[0] + r[1]))
+            add(k, N - 1, sx * r[1])
+            add(k, N - 2, sx * r[0])
+            add(k, N, r[2])
+            continue
         if bc == "drop":
             tot = 0.0
             for j in _OFFSETS:
                 if j == 0 or not (0 <= k + j < n):
                     continue
-                L[k, k + j] += r[j + 2]
+                add(k, k + j, r[j + 2])
                 tot += r[j + 2]
-            L[k, k] -= tot
+            add(k, k, -tot)
         elif bc == "fold":
-            # fold an out-of-range weight onto the nearest in-range neighbour
             for j in _OFFSETS:
                 if j == 0:
                     continue
-                m = k + j
-                if 0 <= m < n:
-                    L[k, m] += r[j + 2]
-                else:
-                    step = 1 if j > 0 else -1
-                    m2 = m
-                    while not (0 <= m2 < n) and m2 != k:
-                        m2 -= step
-                    if m2 != k and 0 <= m2 < n:
-                        L[k, m2] += r[j + 2]
-                    else:
-                        L[k, k] += r[j + 2]
-            L[k, k] += r[2]
+                add(k, min(max(k + j, 0), N), r[j + 2])
+            add(k, k, r[2])
         elif bc == "regular":
-            if abs(r[0]) > 1e-12 or abs(r[4]) > 1e-12:
-                raise ValueError("bc='regular' is defined for nearest-neighbour stencils only")
             if k == n - 1:
-                L[k, k - 1] += -1.0
-                L[k, k] += 1.0
+                add(k, k - 1, -1.0)
+                add(k, k, 1.0)
             else:
                 for j in (-1, 1):
                     if 0 <= k + j < n:
-                        L[k, k + j] += r[j + 2]
-                L[k, k] += r[2]
-
-    if bc == "fold" and n >= 3:
-        # flock45.m rescales the final row:  sx = abs(1/sum(rx(1:2)))
-        s = r[0] + r[1]
-        if abs(s) > 1e-12:
-            sx = abs(1.0 / s)
-            L[n - 1, :] = 0.0
-            L[n - 1, n - 2] = sx * r[1]
-            if n >= 3:
-                L[n - 1, n - 3] = sx * r[0]
-            L[n - 1, n - 1] = r[2]
-    return L
+                        add(k, k + j, r[j + 2])
+                add(k, k, r[2])
+    L = sp.coo_matrix((data, (rows, cols)), shape=(n, n)).tocsr()
+    L.eliminate_zeros()
+    return L if sparse else L.toarray()
 
 
-def laplacian_circle(r: np.ndarray, N: int) -> np.ndarray:
+def laplacian_circle(r: np.ndarray, N: int, *, sparse: bool = False):
     """N x N circulant Laplacian: (L z)_k = sum_j r[j+2] z_{k+j mod N}."""
-    r = np.asarray(r, dtype=float)
-    L = np.zeros((N, N))
-    for k in range(N):
-        for j in _OFFSETS:
-            L[k, (k + j) % N] += r[j + 2]
-    return L
+    _check_size(N)
+    r = _weights(r)
+    rows = np.repeat(np.arange(N), 5)
+    cols = (rows + np.tile(_OFFSETS, N)) % N
+    L = sp.coo_matrix((np.tile(r, N), (rows, cols)), shape=(N, N)).tocsr()
+    L.eliminate_zeros()
+    return L if sparse else L.toarray()
 
 
-def system_matrix_line(st: Stencil, N: int, bc: str = "drop", leader: bool = True) -> np.ndarray:
+def system_matrix_line(
+    st: Stencil, N: int, bc: str = "drop", leader: bool = True, *, sparse: bool = False
+):
     """2(N+1) x 2(N+1) matrix M = [[0, I],[gx Lx, gv Lv]] for agents 0..N."""
-    Lx = laplacian_line(st.rx, N, bc, leader)
-    Lv = laplacian_line(st.rv, N, bc, leader)
+    Lx = laplacian_line(st.rx, N, bc, leader, sparse=sparse)
+    Lv = laplacian_line(st.rv, N, bc, leader, sparse=sparse)
     n = N + 1
+    if sparse:
+        return sp.bmat([[None, sp.eye(n)], [st.gx * Lx, st.gv * Lv]], format="csr")
     M = np.zeros((2 * n, 2 * n))
     M[:n, n:] = np.eye(n)
     M[n:, :n] = st.gx * Lx
@@ -121,10 +145,12 @@ def system_matrix_line(st: Stencil, N: int, bc: str = "drop", leader: bool = Tru
     return M
 
 
-def system_matrix_circle(st: Stencil, N: int) -> np.ndarray:
+def system_matrix_circle(st: Stencil, N: int, *, sparse: bool = False):
     """2N x 2N matrix for N agents on the circle."""
-    Lx = laplacian_circle(st.rx, N)
-    Lv = laplacian_circle(st.rv, N)
+    Lx = laplacian_circle(st.rx, N, sparse=sparse)
+    Lv = laplacian_circle(st.rv, N, sparse=sparse)
+    if sparse:
+        return sp.bmat([[None, sp.eye(N)], [st.gx * Lx, st.gv * Lv]], format="csr")
     M = np.zeros((2 * N, 2 * N))
     M[:N, N:] = np.eye(N)
     M[N:, :N] = st.gx * Lx
@@ -132,7 +158,9 @@ def system_matrix_circle(st: Stencil, N: int) -> np.ndarray:
     return M
 
 
-def system_matrix_line_leaderless(st: Stencil, N: int, bc: str = "drop") -> np.ndarray:
+def system_matrix_line_leaderless(
+    st: Stencil, N: int, bc: str = "drop", *, sparse: bool = False
+):
     """2N x 2N matrix for agents 1..N, with the leader removed (its coupling becomes forcing).
 
     The full matrix from ``system_matrix_line`` is block lower-triangular with the leader's
@@ -140,6 +168,8 @@ def system_matrix_line_leaderless(st: Stencil, N: int, bc: str = "drop") -> np.n
     Use this one for stability margins: otherwise the leader's zero hides the true max Re,
     and its defectiveness corrupts eigenvalue condition numbers.
     """
-    M = system_matrix_line(st, N, bc=bc, leader=True)
+    M = system_matrix_line(st, N, bc=bc, leader=True, sparse=sparse)
     keep = [i for i in range(2 * (N + 1)) if i not in (0, N + 1)]
+    if sparse:
+        return M[keep][:, keep]
     return M[np.ix_(keep, keep)]

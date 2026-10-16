@@ -19,6 +19,7 @@ The MATLAB drivers use the derived combinations
 
 which are exposed here as ``ax0, ax1, ax2, bx1, bx2`` (and ``av*``, ``bv*``).
 """
+
 from __future__ import annotations
 
 from dataclasses import dataclass, field
@@ -42,10 +43,21 @@ class Stencil:
     _checked: bool = field(default=False, repr=False, compare=False)
 
     def __post_init__(self):
-        object.__setattr__(self, "rx", np.asarray(self.rx, dtype=float).reshape(-1))
-        object.__setattr__(self, "rv", np.asarray(self.rv, dtype=float).reshape(-1))
-        if self.rx.size != 5 or self.rv.size != 5:
-            raise ValueError("Nearest & next nearest neighbours only: rx, rv must have length 5")
+        for name in ("rx", "rv"):
+            weights = np.asarray(getattr(self, name), dtype=float).reshape(-1)
+            if weights.size != 5:
+                raise ValueError("rx and rv must have length 5")
+            if not np.isfinite(weights).all():
+                raise ValueError("stencil weights must be finite")
+            # An immutable backing buffer also prevents write access being re-enabled.
+            object.__setattr__(
+                self, name, np.frombuffer(weights.tobytes(), dtype=float)
+            )
+        for name in ("gx", "gv"):
+            gain = float(getattr(self, name))
+            if not np.isfinite(gain):
+                raise ValueError("stencil gains must be finite")
+            object.__setattr__(self, name, gain)
 
     # ---------------------------------------------------------------- checks
     @property
@@ -59,36 +71,60 @@ class Stencil:
     def require_decentralized(self, tol: float = 1e-9) -> "Stencil":
         if not self.is_decentralized(tol):
             sx, sv = self.row_sums
-            raise ValueError(f"stencil is not decentralized: sum(rx)={sx:g}, sum(rv)={sv:g}")
+            raise ValueError(
+                f"stencil is not decentralized: sum(rx)={sx:g}, sum(rv)={sv:g}"
+            )
         return self
 
     @property
     def is_nearest_neighbour(self) -> bool:
-        return abs(self.rx[0]) < _TOL and abs(self.rx[4]) < _TOL \
-            and abs(self.rv[0]) < _TOL and abs(self.rv[4]) < _TOL
+        return (
+            abs(self.rx[0]) < _TOL
+            and abs(self.rx[4]) < _TOL
+            and abs(self.rv[0]) < _TOL
+            and abs(self.rv[4]) < _TOL
+        )
 
     # ------------------------------------------------- cosine / sine parts
     @property
-    def ax0(self): return float(self.rx[2])
-    @property
-    def ax1(self): return float(self.rx[3] + self.rx[1])
-    @property
-    def ax2(self): return float(self.rx[4] + self.rx[0])
-    @property
-    def bx1(self): return float(self.rx[3] - self.rx[1])
-    @property
-    def bx2(self): return float(self.rx[4] - self.rx[0])
+    def ax0(self):
+        return float(self.rx[2])
 
     @property
-    def av0(self): return float(self.rv[2])
+    def ax1(self):
+        return float(self.rx[3] + self.rx[1])
+
     @property
-    def av1(self): return float(self.rv[3] + self.rv[1])
+    def ax2(self):
+        return float(self.rx[4] + self.rx[0])
+
     @property
-    def av2(self): return float(self.rv[4] + self.rv[0])
+    def bx1(self):
+        return float(self.rx[3] - self.rx[1])
+
     @property
-    def bv1(self): return float(self.rv[3] - self.rv[1])
+    def bx2(self):
+        return float(self.rx[4] - self.rx[0])
+
     @property
-    def bv2(self): return float(self.rv[4] - self.rv[0])
+    def av0(self):
+        return float(self.rv[2])
+
+    @property
+    def av1(self):
+        return float(self.rv[3] + self.rv[1])
+
+    @property
+    def av2(self):
+        return float(self.rv[4] + self.rv[0])
+
+    @property
+    def bv1(self):
+        return float(self.rv[3] - self.rv[1])
+
+    @property
+    def bv2(self):
+        return float(self.rv[4] - self.rv[0])
 
     # ------------------------------------------------------------- moments
     def moment_x(self, n: int) -> float:
@@ -103,7 +139,7 @@ class Stencil:
 
     @property
     def a(self) -> float:
-        """a = I_{v,1}^2/4 + I_{x,2}/2 ; positive for asymptotically stable systems.
+        """a = I_{v,1}^2/4 + I_{x,2}/2, the squared long-wave speed splitting.
 
         Matches the constant in ``flock.m``'s commented block
         ``a = 0.25*Iv1^2 + 0.5*Ix2``.
@@ -122,18 +158,27 @@ class Stencil:
         sx, sv = self.ax0, self.av0
         if abs(sx) < _TOL or abs(sv) < _TOL:
             raise ValueError("cannot normalise a stencil with zero diagonal")
-        return Stencil(self.rx / sx, self.rv / sv, self.gx * sx, self.gv * sv,
-                       self.name, self.notes)
+        return Stencil(
+            self.rx / sx,
+            self.rv / sv,
+            self.gx * sx,
+            self.gv * sv,
+            self.name,
+            self.notes,
+        )
 
     def __repr__(self):  # pragma: no cover - cosmetic
         nm = f" {self.name!r}" if self.name else ""
-        return (f"<Stencil{nm} gx={self.gx:g} gv={self.gv:g}\n"
-                f"   rx={np.array2string(self.rx, precision=6)}\n"
-                f"   rv={np.array2string(self.rv, precision=6)}>")
+        return (
+            f"<Stencil{nm} gx={self.gx:g} gv={self.gv:g}\n"
+            f"   rx={np.array2string(self.rx, precision=6)}\n"
+            f"   rv={np.array2string(self.rv, precision=6)}>"
+        )
 
 
-def nn_stencil(gx: float, gv: float, alpha_x1: float = -0.5, alpha_v1: float = -0.5,
-               name: str = "") -> Stencil:
+def nn_stencil(
+    gx: float, gv: float, alpha_x1: float = -0.5, alpha_v1: float = -0.5, name: str = ""
+) -> Stencil:
     """Nearest-neighbour stencil in the Cantos-Veerman-Hammond normalisation.
 
     alpha_{?,0} = 1, alpha_{?,1} = given, alpha_{?,-1} = -(1 + alpha_{?,1}).
