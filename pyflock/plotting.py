@@ -254,7 +254,7 @@ def transient_figure(res, nmax=4, ax=None, show_theory=True):
         ax.scatter(
             [e.t / res.N for e in ex],
             [e.value / res.N for e in ex],
-            s=28,
+            s=16,
             color=CAT[1],
             zorder=4,
             label="Measured extrema",
@@ -269,9 +269,11 @@ def transient_figure(res, nmax=4, ax=None, show_theory=True):
             ax.scatter(
                 np.asarray(th["T_k"])[keep] / res.N,
                 np.asarray(th["A"])[keep] / res.N,
-                marker="x",
-                s=55,
-                color=CAT[2],
+                marker="D",
+                s=28,
+                linewidths=1.1,
+                facecolors="none",
+                edgecolors=CAT[2],
                 zorder=5,
                 label="Leading asymptotic extrema",
             )

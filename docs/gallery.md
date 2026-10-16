@@ -24,8 +24,8 @@ in *Transients*; they are an asymptotic comparison.
 `reflection`: the parameter comparison from *Transients*, Figure 3, here with
 160 followers and $g_x=g_v=-2$. Position coupling is symmetric; velocity weights
 $\rho_{v,1}=-1/2$ and $0$ appear on the same vertical scale. The second case has a
-smaller first excursion and stronger attenuation. Crosses mark leading predicted
-extrema, not a predicted continuous trajectory. The hypotheses and conjectural
+smaller first excursion and stronger attenuation. Small blue dots mark measured extrema; open diamonds mark leading predicted
+extrema. The predictions are discrete points. The hypotheses and conjectural
 step are described in [Model and conventions](model.md).
 
 ## Circle and path can disagree

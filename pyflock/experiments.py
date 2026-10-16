@@ -377,15 +377,18 @@ def draw(name, data, meta):
                 )
                 ex = extrema(t, z[:, -1] - z[:, 0], nmax=4)
                 ax.scatter(
-                    [e.t / N for e in ex], [e.value / N for e in ex], s=22, color=CAT[1]
+                    [e.t / N for e in ex], [e.value / N for e in ex], s=16, color=CAT[1]
                 )
                 keep = data[f"{i}_pred_t"] <= t[-1]
                 ax.scatter(
                     data[f"{i}_pred_t"][keep] / N,
                     data[f"{i}_pred_A"][keep] / N,
-                    color=CAT[2],
-                    marker="x",
-                    s=55,
+                    edgecolors=CAT[2],
+                    facecolors="none",
+                    linewidths=1.1,
+                    marker="D",
+                    s=28,
+                    zorder=4,
                     label="Leading asymptotic extrema",
                 )
                 ax.axhline(0, lw=0.6, color="#999999")
