@@ -50,9 +50,9 @@ def _extensions():
 EXTENSIONS = _extensions()
 NAMES = (*ORIGINAL_NAMES, *EXTENSIONS)
 SOURCES = {
-    "signal": "Cantos, Veerman & Hammond (2016), Signal Velocities in Oscillator Networks, EPJ ST 225, 1115–1126; manuscript Theorems 1–2.",
-    "transients": "Cantos, Hammond & Veerman (2016), Transients in the Synchronization of Oscillator Arrays, EPJ ST 225, 1199–1209; manuscript Theorem 3 and Section 4.",
-    "nnn": "Herbrych et al., Dynamics of Locally Coupled Oscillators with Next-Nearest-Neighbor Interaction, DOI 10.1007/s12591-017-0377-3; manuscript Figure 3.",
+    "signal": "Cantos, Veerman & Hammond (2016), Signal velocity in oscillator arrays, EPJ ST 225, 1115–1126; manuscript Theorems 1–2.",
+    "transients": "Cantos, Hammond & Veerman (2016), Transients in the synchronization of asymmetrically coupled oscillator arrays, EPJ ST 225, 1199–1209; manuscript Theorem 3 and Section 4.",
+    "nnn": "Herbrych et al., Dynamics of locally coupled agents with next nearest neighbor interaction, DOI 10.1007/s12591-017-0377-3; manuscript Figure 3.",
 }
 
 

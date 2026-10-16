@@ -1,4 +1,6 @@
-"""Validation of pyflock against the original MATLAB conventions and against theory."""
+"""Validation of flock matrices, Fourier dynamics and paper asymptotics."""
+
+from itertools import pairwise
 
 import numpy as np
 import pytest
@@ -27,8 +29,8 @@ def test_moment_identities():
             assert st.moment_x(2) == pytest.approx(-st.gx * (4 + 3 * st.ax1))
 
 
-def test_a_matches_flock_m():
-    """flock.m's commented block:  a = 0.25*Iv1^2 + 0.5*Ix2."""
+def test_signal_speed_discriminant_matches_moments():
+    """The squared half-difference of the two speeds is Iv1^2/4 + Ix2/2."""
     st = pf.case("type_I")
     assert st.a == pytest.approx(0.25 * st.moment_v(1) ** 2 + 0.5 * st.moment_x(2))
 
@@ -67,8 +69,8 @@ def test_branches_match_circle_eigenvalues():
     assert worst < 1e-8
 
 
-def test_taylor_matches_matlab_closed_forms():
-    """f_sigma = mu_sigma and q_sigma = -D_sigma, as computed in flock45sim_function.m."""
+def test_branch_coefficients_match_moment_closed_forms():
+    """Pair c_± with D_± from the quadratic through cubic order in theta."""
     for name in (
         "random_example",
         "two_positive_velocities",
@@ -79,18 +81,27 @@ def test_taylor_matches_matlab_closed_forms():
         st = pf.case(name)
         if st.a <= 0:
             continue
-        c = pf.taylor(st, order=2)
-        mu = np.sort(c[:, 1].imag)
-        D = -c[:, 2].real
-        fq = pf.matlab_fq(st)
-        assert mu == pytest.approx(np.sort([fq["fm"], fq["fp"]]), abs=1e-7), name
-        got = np.sort(-D)
-        want = np.sort([fq["qm"], fq["qp"]])
-        assert got == pytest.approx(want, abs=1e-7), name
+        for weights in ((st.rx, st.rv), (st.rx[::-1], st.rv[::-1])):
+            reflected = pf.Stencil(*weights, st.gx, st.gv)
+            offsets = np.arange(-2, 3)
+            Iv1 = reflected.gv * np.dot(reflected.rv, offsets)
+            Iv2 = reflected.gv * np.dot(reflected.rv, offsets**2)
+            Ix2 = reflected.gx * np.dot(reflected.rx, offsets**2)
+            Ix3 = reflected.gx * np.dot(reflected.rx, offsets**3)
+            splitting = np.sqrt(Iv1**2 / 4 + Ix2 / 2)
+            diffusion_split = (3 * Iv1 * Iv2 + 2 * Ix3) / (24 * splitting)
+            expected = (
+                (-Iv1 / 2 + splitting, Iv2 / 4 - diffusion_split),
+                (-Iv1 / 2 - splitting, Iv2 / 4 + diffusion_split),
+            )
+            result = pf.coefficients(reflected)
+            for branch, (speed, diffusion) in zip(("+", "-"), expected):
+                assert result[branch]["c"] == pytest.approx(speed, abs=1e-12), name
+                assert result[branch]["D"] == pytest.approx(diffusion, abs=1e-12), name
 
 
 def test_nn_closed_forms():
-    """Nearest neighbour: c = -gv q/2 -+ sqrt(a),  D = -gv/4 -+ gv^2 q/(8 sqrt a)."""
+    """NN coupling: c_±=-gv*q/2±sqrt(a), D_±=-gv/4±gv^2*q/(8*sqrt(a))."""
     for q in (-0.6, 0.0, 0.35, 0.8):
         gx, gv = -1.3, -0.9
         st = pf.nn_stencil(gx, gv, -0.5, (q - 1) / 2)
@@ -116,8 +127,8 @@ def test_diffusion_is_positive_for_stable_systems():
 
 
 # --------------------------------------------------------------------- matrices
-def test_line_matrix_drop_matches_flock45_second_version():
-    """Hard-coded against the live boundary rows of flock45.m."""
+def test_line_matrix_drop_discards_missing_neighbours_and_preserves_row_sums():
+    """Incomplete rows retain existing interactions and adjust their diagonal."""
     r = np.array([0.11, -0.37, 1.0, -0.53, 0.79])
     r = r - r.sum() / 5.0  # make it decentralized
     N = 9
@@ -139,7 +150,7 @@ def test_line_matrix_drop_matches_flock45_second_version():
     assert np.allclose(L[1:].sum(axis=1), 0.0)  # zero row sums
 
 
-def test_line_matrix_fold_matches_flock45_first_version():
+def test_line_matrix_fold_clamps_neighbours_and_normalises_terminal_row():
     r = np.array([0.11, -0.37, 1.0, -0.53, -0.21])
     r = r - r.sum() / 5.0
     N = 9
@@ -155,7 +166,7 @@ def test_line_matrix_fold_matches_flock45_first_version():
 
 
 def test_drop_equals_variable_mass_for_nearest_neighbour():
-    """For an NN stencil, 'drop' is chi = -alpha_{-1}: the variable-mass BC."""
+    """For NN coupling, 'drop' sets chi=-rho_{-1}, the variable-mass boundary."""
     st = pf.nn_stencil(-1.0, -1.0, -0.5, -0.3)
     N = 7
     L = pf.laplacian_line(st.rx, N, bc="drop")
@@ -255,7 +266,7 @@ def test_type_I_is_asymptotically_unstable_on_the_line():
         ev = np.linalg.eigvals(pf.system_matrix_line(st, N, bc="drop"))
         worst.append(ev.real.max())
     assert all(w > 0 for w in worst), worst
-    assert all(a > b for a, b in zip(worst, worst[1:])), worst  # decreasing
+    assert all(a > b for a, b in pairwise(worst)), worst  # decreasing
     scaled = [w * N for w, N in zip(worst, (20, 40, 60, 80))]
     assert max(scaled) / min(scaled) < 2.0, scaled  # roughly ~ 1/N
 
@@ -353,6 +364,7 @@ def test_stability_map_matches_theory_and_renders():
     mpl = pytest.importorskip("matplotlib")
     mpl.use("Agg")
     import io
+
     from pyflock import plotting as P
 
     P.stability_map_figure(sm).savefig(io.BytesIO(), format="png")

@@ -1,4 +1,4 @@
-"""Finite-system spectra for the historical cases; sensitivity is not a certificate."""
+"""Finite-system spectral survey; sensitivity is not a certificate."""
 
 import numpy as np
 import pyflock as pf

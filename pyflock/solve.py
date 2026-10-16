@@ -186,10 +186,10 @@ def simulate_line(
     rtol: float = 1e-10,
     atol: float = 1e-12,
 ) -> LineResult:
-    """Flock on the line with a leader, replicating ``flock45.m``.
+    """Path response to a prescribed leader velocity.
 
-    Default initial condition (as in ``flock45.m``): every agent sits at its equilibrium
-    spacing and is at rest, and at t = 0 the leader acquires velocity ``v0``.
+    By default, agents start at equilibrium spacing with followers at rest,
+    and at t=0 the leader acquires velocity ``v0``.
     """
     if not np.isfinite(tmax) or tmax <= 0:
         raise ValueError("tmax must be positive and finite")

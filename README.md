@@ -1,10 +1,14 @@
 # pyflock
 
-Numerical simulation and spectral analysis of one-dimensional arrays of assymetrically coupled
-linear oscillators. The package includes reproducible demonstrations from the
-Cantos–Hammond–Veerman paper corpus, next-nearest-neighbour studies, and Lyons's
-heterogeneous-agent thesis. The [coverage map](docs/coverage.md) identifies source
+Numerical simulation and spectral analysis of one-dimensional arrays of
+asymmetrically coupled linear oscillators. The package includes reproducible
+demonstrations from the Cantos–Hammond–Veerman paper corpus,
+next-nearest-neighbour studies, and Lyons's heterogeneous-agent thesis.
+The [coverage map](docs/coverage.md) identifies source
 figures, adaptations and constructed comparisons.
+
+Earlier versions of these simulations were written in MATLAB and C++; the
+notation and examples here follow the papers.
 
 ![Propagation and selected trajectories](docs/img/propagation.png)
 
@@ -43,7 +47,7 @@ python -m pyflock.experiments lyons_response --profile paper --jobs 2 --output f
 The convergence paper profile has 30 parameter pairs, two boundaries and six
 sizes through 3,200 followers. The larger studies checkpoint and resume matching
 results; reduce `--jobs` to limit CPU use. `nnn-ensemble --profile paper` runs
-24,000 cases in new restricted stable families; the original configurations
+24,000 cases in new restricted stable families; the paper's configurations
 were unavailable.
 
 ## Use the package

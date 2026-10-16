@@ -13,30 +13,31 @@ and the system matrix M = [[0, I], [gx Lx, gv Lv]] then has eigenvalues solving
 
 Under the hypotheses of ``taylor``, with a > 0, each branch expands near theta = 0 as
 
-    lambda_sigma(theta) = i mu_sigma theta - D_sigma theta^2 + i beta_sigma theta^3 + ...
+    lambda_sigma(theta) = -i c_sigma theta - D_sigma theta^2 + i beta_sigma theta^3 + ...
 
-whose first three coefficients are, respectively, the (negated) SIGNAL VELOCITY,
-a DIFFUSION coefficient and a DISPERSION coefficient.  ``taylor`` computes these
-from the stencil moments; ``matlab_fq`` reproduces the closed forms used in
-Cantos's ``flock45sim_function.m``, where ``f = mu`` and ``q = -D``.
+Here c_sigma is signal velocity, D_sigma is diffusion, and beta_sigma is the
+cubic dispersion coefficient. ``taylor`` computes the expansion from stencil
+moments; ``coefficients`` returns these three quantities for each branch.
+The signal-velocity formula is given in Herbrych et al., "Dynamics of locally
+coupled agents with next nearest neighbor interaction", Theorem 5.1.
 """
 
 from __future__ import annotations
 
 from math import factorial
+
 import numpy as np
 
 from .stencil import Stencil
 
 __all__ = [
-    "nu_x",
-    "nu_v",
     "branches",
-    "signal_velocities",
-    "phase_velocity",
-    "taylor",
     "coefficients",
-    "matlab_fq",
+    "nu_v",
+    "nu_x",
+    "phase_velocity",
+    "signal_velocities",
+    "taylor",
 ]
 
 _J = np.arange(-2, 3)
@@ -130,7 +131,7 @@ def signal_velocities(st: Stencil) -> tuple[float, float]:
 
 
 def phase_velocity(theta, st: Stencil, labelling: str = "continuous"):
-    """c_m = -Im(lambda)/theta for each branch (the quantity plotted by flock.m)."""
+    """Phase velocity -Im(lambda)/theta for each Fourier branch."""
     theta = np.atleast_1d(np.asarray(theta, dtype=float))
     lam = branches(theta, st, labelling)
     with np.errstate(divide="ignore", invalid="ignore"):
@@ -143,13 +144,14 @@ def taylor(st: Stencil, order: int = 3, h: float = 1e-3, fit: int = 8) -> np.nda
     Returns an array ``c`` of shape (2, order+1) with
     ``lambda_branch(theta) ~ sum_n c[branch, n] theta**n``.
 
-    For a > 0, ``c[:,1] = i mu``, ``c[:,2] = -D``, ``c[:,3] = i beta``.
+    For a > 0, the coefficients are -i times signal velocity, minus diffusion,
+    and i times cubic dispersion at orders one, two and three, respectively.
     Coefficients follow recursively from the symbol moments, without numerical
     differentiation. Requires decentralized coupling, I_x,1 = 0 and a != 0.
     Otherwise fractional powers or coincident first-order roots need separate
     treatment. Negative a is allowed here; then the slopes have nonzero real parts.
 
-    ``h`` and ``fit`` are retained for compatibility and have no effect.
+    ``h`` and ``fit`` are accepted but ignored; the coefficients are analytic.
     """
     if (
         isinstance(order, (bool, np.bool_))
@@ -201,28 +203,3 @@ def coefficients(st: Stencil) -> dict:
     for lbl, i in (("+", int(np.argmax(-mu))), ("-", int(np.argmin(-mu)))):
         res[lbl] = {"c": float(-mu[i]), "D": float(D[i]), "beta": float(beta[i])}
     return res
-
-
-def matlab_fq(st: Stencil) -> dict:
-    """The closed forms used in ``flock45sim_function.m``.
-
-    Returns ``{'fm','fp','qm','qp'}`` where (verified to machine precision against
-    ``taylor``) ``f_sigma = mu_sigma`` and ``q_sigma = -D_sigma``.  Requires the
-    normalisation r_0 = 1 that the MATLAB drivers assume.
-    """
-    gx, gv = st.gx, st.gv
-    # Check the assumptions of the published closed form before dividing by S.
-    signal_velocities(st)
-    if not (
-        np.isclose(st.ax0, 1, rtol=0, atol=1e-12)
-        and np.isclose(st.av0, 1, rtol=0, atol=1e-12)
-    ):
-        raise ValueError("matlab_fq requires diagonal stencil weights equal to 1")
-    B = st.bv1 + 2 * st.bv2
-    S = np.sqrt(gv**2 * B**2 - 2 * gx * (4 + 3 * st.ax1))
-    fm = 0.5 * gv * B - 0.5 * S
-    fp = 0.5 * gv * B + 0.5 * S
-    num = gv**2 * B * (4 + 3 * st.av1) + 2 * gx * st.bx1
-    qm = 0.25 * (gv * (4 + 3 * st.av1) - num / S)
-    qp = 0.25 * (gv * (4 + 3 * st.av1) + num / S)
-    return {"fm": float(fm), "fp": float(fp), "qm": float(qm), "qp": float(qp)}

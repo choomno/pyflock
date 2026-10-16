@@ -16,87 +16,85 @@ Quick start::
     print(pf.transient_summary(res.t, res.last_relative))
 
 The five-point stencil convention is ``r = [r_-2, r_-1, r_0, r_+1, r_+2]``; see
-``pyflock.stencil``.  Curated parameter sets from the original code live in
-``pyflock.cases``.
+``pyflock.stencil``. Named parameter sets for spectral and transient examples
+live in ``pyflock.cases``.
 """
 
-from .stencil import Stencil, nn_stencil
-from .dispersion import (
-    nu_x,
-    nu_v,
-    branches,
-    signal_velocities,
-    phase_velocity,
-    taylor,
-    coefficients,
-    matlab_fq,
-)
-from .matrices import (
-    laplacian_line,
-    laplacian_circle,
-    system_matrix_line,
-    system_matrix_line_leaderless,
-    system_matrix_circle,
-    BOUNDARY_CONDITIONS,
-)
-from .solve import LineResult, CircleResult, simulate_line, simulate_circle, propagate
+from . import plotting, style
 from .analysis import (
     Extremum,
-    extrema,
-    transient_summary,
-    theory_amplitudes,
-    corrected_amplitudes,
-    relative_error_law,
-    eigen_reliability,
-    least_stable_eigenvalue,
-    critical_velocity_asymmetry,
-    velocity_asymmetry_family,
     StabilityMap,
+    corrected_amplitudes,
+    critical_velocity_asymmetry,
+    eigen_reliability,
+    extrema,
+    least_stable_eigenvalue,
+    relative_error_law,
     stability_map,
+    theory_amplitudes,
+    transient_summary,
+    velocity_asymmetry_family,
 )
 from .cases import CASES, case, case_names
-from . import style, plotting
+from .dispersion import (
+    branches,
+    coefficients,
+    nu_v,
+    nu_x,
+    phase_velocity,
+    signal_velocities,
+    taylor,
+)
+from .matrices import (
+    BOUNDARY_CONDITIONS,
+    laplacian_circle,
+    laplacian_line,
+    system_matrix_circle,
+    system_matrix_line,
+    system_matrix_line_leaderless,
+)
+from .solve import CircleResult, LineResult, propagate, simulate_circle, simulate_line
+from .stencil import Stencil, nn_stencil
 
 __version__ = "0.2.0"
 
 __all__ = [
-    "Stencil",
-    "nn_stencil",
-    "nu_x",
-    "nu_v",
-    "branches",
-    "signal_velocities",
-    "phase_velocity",
-    "taylor",
-    "coefficients",
-    "matlab_fq",
-    "laplacian_line",
-    "laplacian_circle",
-    "system_matrix_line",
-    "system_matrix_circle",
     "BOUNDARY_CONDITIONS",
-    "system_matrix_line_leaderless",
-    "LineResult",
-    "CircleResult",
-    "simulate_line",
-    "simulate_circle",
-    "propagate",
-    "Extremum",
-    "extrema",
-    "transient_summary",
-    "theory_amplitudes",
-    "corrected_amplitudes",
-    "relative_error_law",
-    "eigen_reliability",
-    "least_stable_eigenvalue",
-    "critical_velocity_asymmetry",
-    "velocity_asymmetry_family",
-    "StabilityMap",
-    "stability_map",
     "CASES",
+    "CircleResult",
+    "Extremum",
+    "LineResult",
+    "StabilityMap",
+    "Stencil",
+    "__version__",
+    "branches",
     "case",
     "case_names",
-    "style",
+    "coefficients",
+    "corrected_amplitudes",
+    "critical_velocity_asymmetry",
+    "eigen_reliability",
+    "extrema",
+    "laplacian_circle",
+    "laplacian_line",
+    "least_stable_eigenvalue",
+    "nn_stencil",
+    "nu_v",
+    "nu_x",
+    "phase_velocity",
     "plotting",
-    "__version__",
+    "propagate",
+    "relative_error_law",
+    "signal_velocities",
+    "simulate_circle",
+    "simulate_line",
+    "stability_map",
+    "style",
+    "system_matrix_circle",
+    "system_matrix_line",
+    "system_matrix_line_leaderless",
+    "taylor",
+    "theory_amplitudes",
+    "transient_summary",
+    "velocity_asymmetry_family",
 ]

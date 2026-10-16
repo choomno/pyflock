@@ -1,7 +1,7 @@
 """
 Interaction stencils for one-dimensional flocks.
 
-Convention (matching Cantos's MATLAB code exactly).  A stencil is a 5-vector
+A stencil lists the position or velocity weights in offset order:
 
     rx = [r_{-2}, r_{-1}, r_0, r_{+1}, r_{+2}]
 
@@ -12,17 +12,19 @@ indexed by the offset j = -2,-1,0,1,2, so that agent k feels
 Decentralisation forces the row sums to vanish: sum_j rx[j+2] = sum_j rv[j+2] = 0.
 Nearest-neighbour stencils are the special case r_{-2} = r_{+2} = 0.
 
-The MATLAB drivers use the derived combinations
+The even and odd Fourier coefficients are
 
-    a?0 = r_0,   a?1 = r_{+1}+r_{-1},   a?2 = r_{+2}+r_{-2}     (cosine part)
-                 b?1 = r_{+1}-r_{-1},   b?2 = r_{+2}-r_{-2}     (sine part)
+    alpha_0 = r_0,  alpha_j = r_{+j}+r_{-j},  beta_j = r_{+j}-r_{-j},  j=1,2.
 
 which are exposed here as ``ax0, ax1, ax2, bx1, bx2`` (and ``av*``, ``bv*``).
+These conventions follow Herbrych et al., "Dynamics of locally coupled agents
+with next nearest neighbor interaction", Definition 2.1 and Section 4.
 """
 
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+
 import numpy as np
 
 __all__ = ["Stencil", "nn_stencil"]
@@ -68,7 +70,7 @@ class Stencil:
         sx, sv = self.row_sums
         return abs(sx) < tol and abs(sv) < tol
 
-    def require_decentralized(self, tol: float = 1e-9) -> "Stencil":
+    def require_decentralized(self, tol: float = 1e-9) -> Stencil:
         if not self.is_decentralized(tol):
             sx, sv = self.row_sums
             raise ValueError(
@@ -139,21 +141,17 @@ class Stencil:
 
     @property
     def a(self) -> float:
-        """a = I_{v,1}^2/4 + I_{x,2}/2, the squared long-wave speed splitting.
-
-        Matches the constant in ``flock.m``'s commented block
-        ``a = 0.25*Iv1^2 + 0.5*Ix2``.
-        """
+        """a = I_{v,1}^2/4 + I_{x,2}/2; real speeds satisfy (c_+ - c_-)^2 = 4a."""
         return self.moment_v(1) ** 2 / 4.0 + self.moment_x(2) / 2.0
 
     @property
     def q_asym(self) -> float:
-        """Velocity asymmetry q = 1 + 2*alpha_{v,1} for a normalised NN stencil."""
+        """Velocity asymmetry q = 1 + 2*rho_{v,1} for a normalised NN stencil."""
         if not self.is_nearest_neighbour:
             raise ValueError("q_asym is defined for nearest-neighbour stencils only")
         return self.bv1 / self.av0
 
-    def normalised(self) -> "Stencil":
+    def normalised(self) -> Stencil:
         """Rescale so that r_0 = 1 in both stencils (absorbing the factor into gx, gv)."""
         sx, sv = self.ax0, self.av0
         if abs(sx) < _TOL or abs(sv) < _TOL:
@@ -179,9 +177,10 @@ class Stencil:
 def nn_stencil(
     gx: float, gv: float, alpha_x1: float = -0.5, alpha_v1: float = -0.5, name: str = ""
 ) -> Stencil:
-    """Nearest-neighbour stencil in the Cantos-Veerman-Hammond normalisation.
+    """Nearest-neighbour stencil with diagonal weights equal to one.
 
-    alpha_{?,0} = 1, alpha_{?,1} = given, alpha_{?,-1} = -(1 + alpha_{?,1}).
+    ``alpha_x1`` and ``alpha_v1`` specify rho_{x,1} and rho_{v,1}; the weights
+    at offset -1 are then -1-rho_{x,1} and -1-rho_{v,1}, respectively.
     The default alpha_x1 = alpha_v1 = -1/2 is the fully symmetric flock.
     """
     rx = np.array([0.0, -(1.0 + alpha_x1), 1.0, alpha_x1, 0.0])
