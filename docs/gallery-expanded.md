@@ -25,8 +25,9 @@ The zero-mode phase speed is its analytic limit.
 
 ![Impulse and smooth velocity pulse](img/nn_pulse_comparison.png)
 
-`nn_pulse_comparison`: the original 200-agent velocity impulse and a smooth pulse
-under identical couplings and equal total initial velocity. Both use the same
+`nn_pulse_comparison`: the 200-agent velocity impulse from *Signal velocity*,
+Figure 3(b), and a smooth pulse under identical couplings and equal total initial
+velocity. Both use the same
 colour normalization; the impulse lies outside the theorem's regularity hypotheses.
 
 ## NNN waves and convergence
@@ -41,8 +42,9 @@ Type III uses the documented sign correction to the printed coefficients.
 
 `nnn-ensemble`: a new deterministic study of 500 configurations per class, both
 physical boundaries, and twelve sizes through 51,200 followers. These restricted
-families have an all-size path stability argument. Type II gains vary; the original
-configuration selection is unavailable. Complete coefficient arrays are saved.
+families have an all-size path stability argument. Type II gains vary; the paper's
+configurations and selection rule were unavailable. Complete coefficient arrays
+are saved.
 Prediction-guided measurement windows and the Type II identity $T_1=A/v_0$ are
 explicit: the amplitude and first-response error curves coincide by construction.
 Downward triangles mark unresolved errors at a display sensitivity level, rather
@@ -59,9 +61,9 @@ frequency; the second row shows the modulus ratio.
 
 ![Matched coupling path spectra](img/matched_spectra.png)
 
-`matched_spectra`: actual finite-path eigenvalues accompany the historical
-schematic. The lower panels share scales and state the slowest pair explicitly;
-the smallest mode requires high precision. A spectral gap alone does not determine
+`matched_spectra`: finite-path eigenvalues accompany the schematic in *Symmetry
+and stability*, Figure 4. The lower panels share scales and state the slowest
+pair explicitly; the smallest mode requires high precision. A spectral gap alone does not determine
 transient amplification.
 
 ![Matched coupling amplification](img/matched_amplification.png)
@@ -95,7 +97,8 @@ the origin; they do not establish full spectral stability. Position gains follow
 $U(1,5)$; velocity gains follow $U(3,13)$ at 400 agents and $U(2,18)$ at 1,600.
 Each response window
 is recorded; the positive-asymmetry trace can end before the growing negative one.
-Original thesis samples were unavailable, and these were not chosen for an outcome.
+The gain arrays used in the thesis were unavailable; these samples were not
+chosen for an outcome.
 
 ![Lyons arrival and attenuation](img/lyons_response.png)
 

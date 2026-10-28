@@ -1,11 +1,18 @@
 # pyflock
 
 Pyflock conducts numerical simulation and spectral analysis of one-dimensional
-arrays of assymetrically coupled linear oscillators. The package includes
+arrays of asymmetrically coupled linear oscillators. The package includes
 reproducible demonstrations from the Cantos–Hammond–Veerman paper corpus,
 next-nearest-neighbour studies, and Lyons's heterogeneous-agent thesis. The
 [coverage map](docs/coverage.md) identifies source figures, adaptations and
 constructed comparisons.
+
+The [mathematical reference](docs/mathematical-reference/mathematical-reference.pdf)
+defines the models, derives the local spectral coefficients and states the
+hypotheses behind the asymptotic comparisons.
+
+Earlier versions of these simulations were written in MATLAB and C++; the
+notation and examples here follow the papers.
 
 ![Propagation and selected trajectories](docs/img/propagation.png)
 
@@ -19,7 +26,15 @@ python -m venv .venv
 python -m pip install -r requirements-tested.txt
 python -m pip install -e . --no-deps
 python -m pyflock.experiments all
-python -m pytest
+```
+
+For tests, linting and formatting checks:
+
+```sh
+python -m pip install -r requirements-dev.txt
+python -m pytest -q
+python -m ruff check .
+python -m ruff format --check .
 ```
 
 Each demo saves PDF, SVG and PNG figures, numerical arrays, and a JSON record of
@@ -28,10 +43,12 @@ one demo, or redraw its saved arrays:
 
 ```sh
 python -m pyflock.experiments reflection
+python -m pyflock.experiments reflection --verify
 python -m pyflock.experiments reflection --redraw
 ```
 
-The [gallery](docs/gallery.md) and [expanded gallery](docs/gallery-expanded.md)
+The [reproduction guide](docs/reproduction.md) explains the saved files,
+verification and checkpoint behavior. The [gallery](docs/gallery.md) and [expanded gallery](docs/gallery-expanded.md)
 explain the figures. The default profile uses smaller demonstrations;
 `--profile paper` uses the sizes recorded in the coverage map. For example:
 
@@ -44,7 +61,7 @@ python -m pyflock.experiments lyons_response --profile paper --jobs 2 --output f
 The convergence paper profile has 30 parameter pairs, two boundaries and six
 sizes through 3,200 followers. The larger studies checkpoint and resume matching
 results; reduce `--jobs` to limit CPU use. `nnn-ensemble --profile paper` runs
-24,000 cases in new restricted stable families; the original configurations
+24,000 cases in new restricted stable families; the paper's configurations
 were unavailable.
 
 ## Use the package
@@ -67,11 +84,28 @@ print(pf.signal_velocities(st))
 print(pf.transient_summary(res.t, res.last_relative))
 ```
 
-[Model and conventions](docs/model.md) defines boundaries and observables.
+[Model and conventions](docs/model.md) summarizes boundaries and observables.
 [Sources](docs/sources.md) lists the works used by the demos.
 [Numerical notes](docs/numerical-notes.md) records coefficient corrections and
 precision limits. Tests compare independent Fourier, matrix and ODE methods;
 source records distinguish numerical sensitivity from asymptotic error.
+
+## Development
+
+[Testing](docs/testing.md) gives the local commands and CI checks. CI tests the
+installed wheel and source distribution, enforces at least 99.5% line and branch
+coverage separately for the computational API and experiment modules, checks
+formatting and documentation links, and compiles the mathematical reference.
+The measured source is the complete package, with no coverage exclusions.
+
+Development takes place on `dev`.
+
+| Location | Contents |
+| --- | --- |
+| `pyflock/` | Models, numerical methods, plotting and named experiments. |
+| `tests/` | Mathematical comparisons, validation, reproduction and package tests. |
+| `docs/` | Mathematical reference, reproduction guide and figure galleries. |
+| `ci/` | Coverage, installation, distribution and documentation checks. |
 
 ## References
 

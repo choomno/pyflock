@@ -1,0 +1,327 @@
+\documentclass[11pt]{article}
+\ifdefined\pdftrailerid\pdftrailerid{}\fi
+\usepackage[T1]{fontenc}
+\usepackage{lmodern,amsmath,amssymb,amsthm,booktabs}
+\usepackage[margin=1in]{geometry}
+\usepackage[hidelinks]{hyperref}
+\usepackage{microtype}
+\hypersetup{pdftitle={Oscillator arrays in pyflock: Mathematical reference}}
+\newcommand{\R}{\mathbb R}
+\newcommand{\C}{\mathbb C}
+\newcommand{\dd}{\mathrm d}
+\newcommand{\diag}{\mathop{\mathrm{diag}}}
+\newtheorem{proposition}{Proposition}
+\title{Oscillator arrays in pyflock\\[3pt]\large Mathematical reference}
+\author{}
+\date{}
+\begin{document}
+\maketitle
+\vspace{-2em}
+
+Pyflock computes trajectories, spectra and transient observables for linear
+oscillator arrays. The principal examples follow Cantos, Hammond and
+Veerman~\cite{signal,transients}, the next-nearest-neighbour study of
+Herbrych et al.~\cite{nnn}, and Lyons's heterogeneous arrays~\cite{lyons}.
+This reference gives the equations and the hypotheses behind the comparisons.
+The repository's coverage map identifies the source figure and any changed
+parameters or measurement rule for each experiment.
+
+\section{Homogeneous arrays}
+
+Let $z_k(t)$ be displacement from an equally spaced formation. For offsets
+$J=\{-2,-1,0,1,2\}$, the interior equation is
+\begin{equation}\label{eq:model}
+ \ddot z_k=g_x\sum_{j\in J}\rho_{x,j}z_{k+j}
+          +g_v\sum_{j\in J}\rho_{v,j}\dot z_{k+j}.
+\end{equation}
+Decentralization means $\sum_j\rho_{x,j}=\sum_j\rho_{v,j}=0$.
+Consequently uniform displacement and velocity, $z_k(t)=a+bt$, solve the
+interior equations. The usual normalized convention has
+$\rho_{x,0}=\rho_{v,0}=1$ and $g_x,g_v<0$.
+Normalization absorbs each nonzero diagonal coefficient into its gain and
+does not change the interior operator.
+A \texttt{Stencil} stores five weights in increasing offset order.
+Construction requires finite weights and gains; it permits
+nondecentralized stencils. Hypotheses of a particular approximation are
+checked separately.
+
+Nearest-neighbour coupling sets the two outer weights to zero.
+With unit diagonal, specifying $\rho_{\bullet,1}$ determines
+$\rho_{\bullet,-1}=-1-\rho_{\bullet,1}$.
+The arguments \texttt{alpha\_x1} and \texttt{alpha\_v1} of
+\texttt{nn\_stencil} denote these positive-offset weights.
+
+\subsection{Circle, path and boundary conditions}
+
+On a circle, $N$ counts all agents; indices are taken modulo $N$.
+On a path, $N$ counts followers: agents are $0,\ldots,N$,
+with agent $0$ the leader. Increasing index points towards the tail.
+The standard leader experiment starts with $z_k(0)=0$,
+$\dot z_k(0)=0$ for $k>0$, and $\dot z_0(0)=v_0$;
+the leader follows $z_0(t)=v_0t$.
+Its tail observable is $y_N=z_N-z_0$.
+A circular velocity impulse is a different initial-value problem.
+
+The endpoint rule is part of the operator. For the \texttt{drop} and
+\texttt{regular} nearest-neighbour boundaries,
+\begin{equation}\label{eq:tail}
+ \ddot z_N=g_x b_x(z_N-z_{N-1})
+          +g_v b_v(\dot z_N-\dot z_{N-1}).
+\end{equation}
+The \texttt{drop} boundary has $b_\bullet=-\rho_{\bullet,-1}$:
+it discards missing neighbours and sets the diagonal to minus the
+remaining off-diagonal sum. This is the variable-mass condition in
+\cite[Definition 1]{transients}. The \texttt{regular} boundary has
+$b_x=b_v=1$ and is defined only for nearest neighbours.
+For next-nearest neighbours, \texttt{drop} applies its row rule at every
+incomplete neighbourhood.
+
+The next-nearest-neighbour experiments also implement the paper's fixed-mass
+boundary, which clamps missing indices to the corresponding endpoint.
+The general package boundary \texttt{fold} is a different rule:
+it clamps missing indices except that, at the tail for $N\geq2$ and
+$\rho_{-2}+\rho_{-1}\neq0$, it retains diagonal $\rho_0$ and multiplies
+the predecessor weights by $1/|\rho_{-2}+\rho_{-1}|$.
+That last rule need not preserve zero row sum for arbitrary input.
+A record must identify which boundary was used.
+
+\subsection{Finite operators and propagation}
+
+For either geometry, let $L_x,L_v$ be the matrices implementing the stated
+stencils and boundaries. In state order $(z,\dot z)$,
+\begin{equation}\label{eq:matrix}
+ \frac{\dd}{\dd t}\binom z{\dot z}
+ =M\binom z{\dot z},\qquad
+ M=\begin{pmatrix}0&I\\g_xL_x&g_vL_v\end{pmatrix}.
+\end{equation}
+A driven path has a zero acceleration row for its leader.
+Removing its position and velocity coordinates gives the $2N$-dimensional
+follower operator. The full path spectrum consists of that spectrum
+together with the leader's double zero eigenvalue.
+
+For a constant generator, the initial-value solution is
+$u(t)=e^{tM}u(0)$. Pyflock evaluates a dense exponential, a sparse
+exponential action, or a Fourier solution on the circle; an adaptive
+DOP853 integrator provides a separate comparison.
+These are floating-point evaluations of the finite system.
+Neither an eigenvalue sensitivity heuristic nor agreement between two
+numerical methods is a certified enclosure of the solution or spectrum.
+
+\section{Fourier modes and local coefficients}
+
+For the circle mode $z_k=e^{ik\theta}e^{\lambda t}$, put
+\begin{equation}\label{eq:symbol}
+ \nu_\bullet(\theta)=g_\bullet\sum_j\rho_{\bullet,j}e^{ij\theta}.
+\end{equation}
+Substitution in \eqref{eq:model} gives
+\begin{equation}\label{eq:characteristic}
+ \lambda^2-\nu_v(\theta)\lambda-\nu_x(\theta)=0.
+\end{equation}
+Thus the finite-circle spectrum, with algebraic multiplicity, is the union
+of the two roots for $\theta=2\pi m/N$, $m=0,\ldots,N-1$.
+This is an exact algebraic description; the returned numbers are numerical
+root evaluations. Pointwise quadratic roots need not keep the same branch
+label when followed around the circle.
+
+Define moments
+\[
+ I_{\bullet,n}=g_\bullet\sum_j\rho_{\bullet,j}j^n,\qquad
+ s^2=\frac{I_{v,1}^2}{4}+\frac{I_{x,2}}2.
+\]
+Assume decentralization, $I_{x,1}=0$, and $s>0$.
+The two branches through the origin are locally analytic and have expansions
+\begin{equation}\label{eq:expansion}
+ \lambda_\pm(\theta)=-ic_\pm\theta-D_\pm\theta^2+O(\theta^3),
+ \qquad c_\pm=-\frac{I_{v,1}}2\pm s.
+\end{equation}
+Positive velocity means increasing agent index, so phase velocity is
+$-\operatorname{Im}\lambda/\theta$.
+
+\begin{proposition}\label{prop:coefficients}
+Under the preceding assumptions,
+\begin{equation}\label{eq:diffusion}
+ D_\pm=\frac{I_{v,2}}4
+ \mp\frac{3I_{v,1}I_{v,2}+2I_{x,3}}{24s}.
+\end{equation}
+These are local coefficient identities; they do not require global
+spectral stability.
+\end{proposition}
+\begin{proof}
+Expand $\nu_\bullet=\sum_n I_{\bullet,n}(i\theta)^n/n!$.
+The coefficients of $\theta^2$ and $i\theta^3$ in
+\eqref{eq:characteristic} give
+\[
+ c^2+I_{v,1}c-\frac{I_{x,2}}2=0,\qquad
+ D(2c+I_{v,1})=\frac{I_{v,2}c}{2}-\frac{I_{x,3}}6.
+\]
+Since $2c_\pm+I_{v,1}=\pm2s$, solving yields \eqref{eq:diffusion}.
+\end{proof}
+
+The function \texttt{taylor} obtains higher coefficients recursively from
+the same characteristic equation, without numerical differentiation.
+It also permits $s^2<0$, when first-order roots can have nonzero real
+parts. Real-speed helpers require $s^2>0$.
+The degenerate case $s=0$ and nonzero first position moment require
+separate analysis; the local Taylor routine rejects them.
+For $I_{x,1}\neq0$, fractional powers can occur.
+A low-wavenumber expansion does not determine the remainder uniformly
+over the circle or through arbitrarily many reflections.
+
+Keeping the first two terms of \eqref{eq:expansion} formally yields
+$u_t+cu_\xi=Du_{\xi\xi}$ for a wave envelope.
+Gaussian spreading in this equation alone supplies no error estimate
+for a reflected path wave or a tail extremum.
+
+\section{Stability and transient measurements}
+
+For a decentralized circle, coherent motion gives a two-dimensional invariant
+subspace with a single Jordan block at zero. Asymptotic stability relative to
+this motion requires the zero eigenvalue to have algebraic multiplicity
+exactly two and all other eigenvalues in the open left half-plane.
+Path stability refers to the follower operator with the leader removed.
+Stability at a fixed size and bounds uniform as $N\to\infty$ are distinct
+questions; a stable nonnormal matrix can have large transient responses.
+A partial spectrum near zero cannot establish full spectral stability.
+
+For symmetric position coupling, negative normalized gains, and
+$c_-<0<c_+$, the path-wave comparison from
+\cite[Theorem 3]{transients} uses
+\begin{equation}\label{eq:prediction}
+ \begin{split}
+ P&=N\left(\frac1{c_+}-\frac1{c_-}\right),\\
+ T_k&=\frac N{c_+}+(k-1)P,\qquad
+ A_k=-\left(\frac{c_-}{c_+}\right)^{k-1}\frac{Nv_0}{c_+}.
+ \end{split}
+\end{equation}
+Here $A_k$ are signed tail extrema; $2P$ is the full period.
+The attenuation between the first and third extrema is
+$A_3/A_1=(c_-/c_+)^2$, whereas consecutive absolute extrema have
+ratio $|c_-/c_+|$.
+
+The cited theorem assumes asymptotic stability, flock stability and
+decay assumptions on Fourier coefficients of the second time derivative.
+Its proof invokes the bulk-wave and boundary conjectures in that paper.
+Equation \eqref{eq:prediction} is therefore used as a conditional
+large-$N$ comparison for a fixed number of reflections.
+The package's local stencil checks do not establish all those hypotheses.
+The abrupt leader step and point impulses must also be distinguished from
+smooth initial waves.
+
+Measured extrema are extracted from sampled tail traces, with optional
+local parabolic refinement at isolated extrema. Flat extrema are reported
+at the midpoint of the plateau's time interval. Endpoints and monotone
+plateaus are not counted as local extrema.
+The convergence experiment estimates a full period from the first and third
+extrema and reports relative errors using the predicted value as denominator.
+It separately checks changes after coarsening the time samples.
+Sampling sensitivity, variation between samples, and error of an asymptotic
+formula measure different things.
+A maximum on a finite recorded interval is not a maximum over all time.
+
+\section{Heterogeneous arrays}
+
+The module \texttt{heterogeneous} uses Lyons's positive gain magnitudes:
+\begin{equation}\label{eq:heterogeneous}
+ \ddot z=-\diag(g_{x,k})L_xz-\diag(g_{v,k})L_v\dot z,
+ \qquad g_{x,k},g_{v,k}>0.
+\end{equation}
+Here $N$ counts all agents on either graph; the path has $N-1$ followers.
+Position weights are $(-1/2,1,-1/2)$ and velocity weights are
+$(-(1+\beta_v)/2,1,(\beta_v-1)/2)$.
+The condition $|\beta_v|\leq1$ makes the neighbour velocity weights
+nonpositive; it does not by itself establish heterogeneous stability.
+Constant gains reproduce the homogeneous model with gains $-g_x,-g_v$.
+
+For a periodically repeated cell, define
+\[
+ M_x=\left\langle\frac1{g_x}\right\rangle,\qquad
+ V=\left\langle\frac{g_v}{g_x}\right\rangle.
+\]
+The first-order coefficients in \cite[Theorem 2.5.1]{lyons} are
+\[
+ c_{1,\pm}=-\frac{\beta_v V}{2M_x}
+       \pm\sqrt{\frac{\beta_v^2V^2}{4M_x^2}+\frac1{2M_x}}.
+\]
+Lyons uses $\lambda=ic_1\theta+\cdots$; increasing-index velocities
+are $-c_1$. His Bloch phase is per cell; for cell length $p$,
+$\theta=\phi/p$. The package reports this convention explicitly.
+The equivalent homogeneous gains $1/M_x$ and $V/M_x$ match these
+first-order coefficients, without determining all finite spectra or
+transient responses of differently ordered arrays.
+Distinct-agent ensembles are finite numerical comparisons with their
+gain arrays saved; they do not prove a random-medium limit.
+
+\section{Computational evidence and source adaptations}
+
+The named experiments retain their numerical arrays, parameters,
+boundary and initial data, software versions, source snapshot and
+checksums. Recomputing the arrays, redrawing saved arrays, and verifying
+saved files are separate operations.
+Checksums establish agreement with a saved record, not the truth of
+a mathematical claim. Independent identities and numerical comparisons
+in the tests supply further checks.
+
+The coverage map records unavailable source samples and constructed
+comparisons. In particular, the Type III stencil printed in
+\cite[Figure 7]{nnn} has a nonzero row sum.
+Changing its second coefficient from $-15/4$ to $+15/4$ restores
+zero row sum and zero first position moment; the experiment records this
+correction. The paper's fixed-mass velocity endpoint uses velocity
+weights, correcting a printed position subscript.
+New ensembles retain their selection rules and full coefficient arrays.
+
+The matched-coupling studies~\cite{asymmetric,symmetry} refine
+sensitive resonance neighbourhoods at higher precision; their reported
+frequency maxima are refined samples over a stated band.
+The force experiment~\cite{energy} checks the stated finite-system
+energy and a constructed distributed-force comparison.
+These computations do not certify supremum norms or asymptotic
+scaling in array size.
+The exploratory Gaussian amplitude correction and small-asymmetry
+spectral helpers are identified as proposals in their API documentation;
+they are not correctness criteria for the reproduced experiments.
+
+\begin{thebibliography}{9}
+\bibitem{signal}
+C.~E. Cantos, J.~J.~P. Veerman and D.~K. Hammond,
+\emph{Signal velocity in oscillator arrays},
+Eur.\ Phys.\ J.\ Special Topics \textbf{225} (2016), 1115--1126.
+\href{https://doi.org/10.1140/epjst/e2016-02665-0}{doi:10.1140/epjst/e2016-02665-0}.
+
+\bibitem{transients}
+C.~E. Cantos, D.~K. Hammond and J.~J.~P. Veerman,
+\emph{Transients in the synchronization of asymmetrically coupled oscillator arrays},
+Eur.\ Phys.\ J.\ Special Topics \textbf{225} (2016), 1199--1209.
+\href{https://doi.org/10.1140/epjst/e2016-02658-y}{doi:10.1140/epjst/e2016-02658-y}.
+
+\bibitem{nnn}
+J.~Herbrych, A.~G. Chazirakis, N.~Christakis and J.~J.~P. Veerman,
+\emph{Dynamics of locally coupled agents with next nearest neighbor interaction},
+Differ.\ Equ.\ Dyn.\ Syst.\ \textbf{29} (2021), 487--509; online 2017.
+\href{https://doi.org/10.1007/s12591-017-0377-3}{doi:10.1007/s12591-017-0377-3}.
+
+\bibitem{lyons}
+R.~G. Lyons, \emph{Linear Nearest Neighbor Flocks With All Distinct Agents},
+PhD dissertation, Portland State University (2022).
+\url{https://pdxscholar.library.pdx.edu/open_access_etds/5903/}.
+
+\bibitem{asymmetric}
+F.~M. Tangerman, J.~J.~P. Veerman and B.~D. Sto\v{s}i\'c,
+\emph{Asymmetric decentralized flocks},
+IEEE Trans.\ Automat.\ Control \textbf{57} (2012), 2844--2853.
+\href{https://doi.org/10.1109/TAC.2012.2199150}{doi:10.1109/TAC.2012.2199150}.
+
+\bibitem{symmetry}
+J.~J.~P. Veerman,
+\emph{Symmetry and stability of homogeneous flocks (a position paper)},
+Portland State University working paper (2010).
+\url{https://pdxscholar.library.pdx.edu/mth_fac/131/}.
+
+\bibitem{energy}
+I.~Herman, S.~Knorn and A.~Ahl\'en,
+\emph{Disturbance scaling in bidirectional vehicle platoons with different
+asymmetry in position and velocity coupling},
+Automatica \textbf{82} (2017), 13--20.
+\href{https://doi.org/10.1016/j.automatica.2017.04.010}{doi:10.1016/j.automatica.2017.04.010}.
+\end{thebibliography}
+\end{document}

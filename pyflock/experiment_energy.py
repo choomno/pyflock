@@ -19,8 +19,16 @@ from .style import CAT, plot_style
 
 def damping(n, hp, r=1.0):
     """Paper (3),(4): leader fixed, last follower has forward error only."""
-    if n < 1 or int(n) != n or hp < 0 or r <= 0:
-        raise ValueError("Require integer n>=1, hp>=0, r>0")
+    if (
+        isinstance(n, (bool, np.bool_))
+        or not isinstance(n, (int, np.integer))
+        or n < 1
+        or not np.isfinite(hp)
+        or hp < 0
+        or not np.isfinite(r)
+        or r <= 0
+    ):
+        raise ValueError("Require integer n>=1, finite hp>=0, finite r>0")
     b = np.eye(n) - np.eye(n, k=1)
     return r * (b + hp * np.abs(b)) @ b.T
 
@@ -423,12 +431,15 @@ def compute_continuum(profile="quick", jobs=1, checkpoint=None):
     # Weighted spatial RMS is exactly |amplitude difference|/sqrt(2) for
     # a resolved non-Nyquist sine mode on each periodic grid.
     error = np.max(np.abs(discrete - continuum), axis=1) / np.sqrt(2)
-    roots = lambda q: np.array(
-        [
-            -0.1 * q / 2 + 1j * np.sqrt(q - (0.1 * q / 2) ** 2),
-            -0.1 * q / 2 - 1j * np.sqrt(q - (0.1 * q / 2) ** 2),
-        ]
-    )
+
+    def roots(q):
+        return np.array(
+            [
+                -0.1 * q / 2 + 1j * np.sqrt(q - (0.1 * q / 2) ** 2),
+                -0.1 * q / 2 - 1j * np.sqrt(q - (0.1 * q / 2) ** 2),
+            ]
+        )
+
     lambdas = np.array([roots(q) for q in k2h])
     exact = roots(k * k)
     arrays = {

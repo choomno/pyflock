@@ -2,14 +2,24 @@ __pycache__/
 *.py[cod]
 *.egg-info/
 .pytest_cache/
+.ruff_cache/
+.coverage*
+coverage.json
+htmlcov/
 build/
 dist/
 .venv/
 venv/
 .ipynb_checkpoints/
 
-# regenerate with: python examples/figures.py
+# Regenerate numerical results with python -m pyflock.experiments.
 figures/
 figures-paper/
 figures-resolved/
 figures-expanded/
+
+# Local instructions and working notes do not belong in the distribution.
+AGENTS.md
+CLAUDE.md
+PROMPT*.md
+RESEARCH_AGENDA.md

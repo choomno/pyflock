@@ -26,6 +26,7 @@ from .heterogeneous import (
     simulate_tail,
     system_matrix,
 )
+from .solve import _uniform_step
 from .style import CAT, plot_style
 
 SOURCE = {
@@ -100,7 +101,7 @@ def measure_response(t, tail):
         or not np.isfinite(t).all()
         or not np.isfinite(tail).all()
         or np.any(np.diff(t) <= 0)
-        or not np.allclose(np.diff(t), t[1] - t[0])
+        or _uniform_step(t) is None
     ):
         raise ValueError(
             "t and tail must be finite equally spaced vectors of length >=5"
@@ -748,7 +749,7 @@ def draw_response(data, meta):
                     ylabel=label,
                 )
                 ax.grid(True, alpha=0.35)
-                if family == 0 and column == 0:
+                if family == 0 and column == 0 and ax.get_legend_handles_labels()[0]:
                     ax.legend(fontsize=8)
         fig.suptitle(
             f"Arrival and attenuation in heterogeneous paths: N={meta['N_total']}, {meta['ensemble_size']} samples per family",
@@ -835,7 +836,8 @@ def draw_ordering(data, meta):
             ylabel=r"$(z_{N-1}-z_0)/|A_1|$",
         )
         axs[0].legend(fontsize=7.7)
-        axs[2].legend(fontsize=8)
+        if axs[2].get_legend_handles_labels()[0]:
+            axs[2].legend(fontsize=8)
         fig.suptitle(
             f"New investigation: repeated cells, distinct agents and ordering (N={meta['N_total']}, one realization)",
             fontsize=11,

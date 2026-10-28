@@ -15,7 +15,7 @@ import numpy as np
 from scipy import sparse
 from scipy.sparse.linalg import expm_multiply
 
-from .solve import _initial, _times, propagate
+from .solve import _initial, _times, _uniform_step, propagate
 
 __all__ = [
     "CircleResult",
@@ -232,11 +232,8 @@ def simulate_tail(
     if times[0] != 0:
         state = expm_multiply(matrix * times[0], state, traceA=trace * times[0])
     tail[0] = state[tail_index]
-    uniform = times.size > 1 and np.allclose(
-        np.diff(times), times[1] - times[0], rtol=1e-10, atol=1e-14
-    )
-    if uniform:
-        dt = float(times[1] - times[0])
+    dt = _uniform_step(times)
+    if dt is not None:
         for start in range(0, times.size - 1, chunk_size):
             count = min(chunk_size, times.size - 1 - start)
             block = expm_multiply(

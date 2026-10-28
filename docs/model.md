@@ -1,5 +1,9 @@
 # Model and conventions
 
+The [mathematical reference](mathematical-reference/mathematical-reference.pdf)
+gives a self-contained account, including a derivation of the local diffusion
+coefficients and the heterogeneous gain and phase conventions.
+
 The state variable $z_k$ is displacement from the prescribed formation spacing.
 Coherent motion is $z_k(t)=a+bt$. The interior equations are
 
@@ -39,8 +43,8 @@ $$
 neighbours and adjust the diagonal so each row sums to zero. This is the
 *variable mass* condition in *Transients*, Definition 1. `regular` sets both
 $\beta$'s to one. For next-nearest neighbours, `drop` applies the same row
-rule at every incomplete neighbourhood. The historical `fold` rule is another
-closure; it should be identified explicitly when used.
+rule at every incomplete neighbourhood. The package's `fold` boundary is another
+closure; identify it explicitly when used.
 
 ## Fourier analysis
 
@@ -63,18 +67,16 @@ c_\pm=-\frac{I_{v,1}}2
 \pm\sqrt{\frac{I_{v,1}^2}{4}+\frac{I_{x,2}}2}.
 $$
 
-Thus phase velocity is $-\operatorname{Im}\lambda/\theta$.
-In the historical MATLAB naming, `fm` is $-c_+$ and `fp` is $-c_-$;
-`qm` is $-D_+$ and `qp` is $-D_-$, respectively.
+Thus phase velocity is $-\Im\lambda/\theta$.
 Retaining the quadratic term gives the formal envelope equation
 $u_t+cu_s=Du_{ss}$. Its Gaussian spreading alone does not prove an error
 estimate for a reflected wave or a tail extremum.
 
 ## Stability and tail observables
 
-Circle stability means convergence to coherent motion: the translation and
-uniform-velocity modes give a double zero eigenvalue; all others must lie in
-the open left half-plane. Path stability is checked on the follower matrix
+Circle stability means convergence to coherent motion: the zero eigenvalue
+must have algebraic multiplicity exactly two, with the coherent Jordan block;
+all others must lie in the open left half-plane. Path stability is checked on the follower matrix
 with the prescribed leader removed. For fixed $N$, this is distinct from
 control of transient amplification as $N\to\infty$.
 

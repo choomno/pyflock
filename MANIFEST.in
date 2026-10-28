@@ -1,0 +1,15 @@
+include README.md pyproject.toml requirements-tested.txt requirements-dev.txt
+recursive-include pyflock *.py
+recursive-include tests *.py
+recursive-include examples *.py
+recursive-include ci *.py
+recursive-include docs *.md *.tex *.pdf *.png
+recursive-include .github *.yml
+global-exclude *.py[cod] AGENTS.md CLAUDE.md
+prune figures
+prune figures-expanded
+prune figures-paper
+prune figures-resolved
+prune work
+prune outputs
+prune .git

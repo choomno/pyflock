@@ -14,23 +14,24 @@ The default propagators evaluate the matrix exponential in floating-point arithm
 from __future__ import annotations
 
 from dataclasses import dataclass
+
 import numpy as np
+from scipy.integrate import solve_ivp
 from scipy.linalg import expm
 from scipy.sparse import csr_matrix, issparse
 from scipy.sparse.linalg import expm_multiply
-from scipy.integrate import solve_ivp
 
+from .dispersion import nu_v, nu_x
+from .matrices import system_matrix_circle, system_matrix_line
 from .stencil import Stencil
-from .matrices import system_matrix_line, system_matrix_circle
-from .dispersion import nu_x, nu_v
 
 __all__ = [
-    "LineResult",
     "CircleResult",
+    "LineResult",
+    "propagate",
+    "simulate_circle",
     "simulate_line",
     "simulate_tail",
-    "simulate_circle",
-    "propagate",
 ]
 
 
@@ -54,6 +55,22 @@ def _initial(values, n, name):
     if values.shape != (n,) or not np.isfinite(values).all():
         raise ValueError(f"{name} must be a finite vector of length {n}")
     return values.copy()
+
+
+def _uniform_step(times):
+    """Return the affine grid step, or None if deviations exceed roundoff.
+
+    The tolerance follows elapsed time, rather than an absolute threshold or
+    the magnitude of a common time offset. Ambiguous grids take the general
+    per-output path instead of assuming uniform spacing.
+    """
+    if times.size < 2:
+        return None
+    elapsed = times - times[0]
+    step = float(elapsed[-1] / (times.size - 1))
+    expected = step * np.arange(times.size)
+    tolerance = 4 * np.spacing(np.maximum(elapsed, abs(step)))
+    return step if np.all(np.abs(elapsed - expected) <= tolerance) else None
 
 
 def propagate(
@@ -99,12 +116,11 @@ def propagate(
         raise ValueError("method must be 'expm' or 'rk'")
 
     n = M.shape[0]
-    uniform = times.size > 1 and np.allclose(
-        np.diff(times), times[1] - times[0], rtol=1e-10, atol=1e-14
-    )
+    step = _uniform_step(times)
+    uniform = step is not None
     if uniform and n <= 900 and not issparse(M):
         # one dense exponential, then repeated application
-        dt = float(times[1] - times[0])
+        dt = step
         out = np.empty((times.size, n), dtype=dtype)
         y = expm(M * float(times[0])) @ y0 if times[0] != 0 else y0.copy()
         E = expm(M * dt)
@@ -153,7 +169,7 @@ class LineResult:
         return self.z[:, self.N] - self.z[:, 0]
 
     def collisions(self) -> str:
-        """First time two neighbouring agents cross, or a clean bill of health."""
+        """First sampled neighbour crossing or contact, if present."""
         d = np.diff(self.xrel, axis=1)
         bad = np.argwhere(d >= 0.0)
         if bad.size == 0:
@@ -186,10 +202,10 @@ def simulate_line(
     rtol: float = 1e-10,
     atol: float = 1e-12,
 ) -> LineResult:
-    """Flock on the line with a leader, replicating ``flock45.m``.
+    """Path response to a prescribed leader velocity.
 
-    Default initial condition (as in ``flock45.m``): every agent sits at its equilibrium
-    spacing and is at rest, and at t = 0 the leader acquires velocity ``v0``.
+    By default, agents start at equilibrium spacing with followers at rest,
+    and at t=0 the leader acquires velocity ``v0``.
     """
     if not np.isfinite(tmax) or tmax <= 0:
         raise ValueError("tmax must be positive and finite")

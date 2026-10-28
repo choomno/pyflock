@@ -37,8 +37,9 @@ step are described in [Model and conventions](model.md).
 
 ![Boundary effects](img/boundary.png)
 
-`boundary --profile paper`: the historical circle-stable/path-unstable NNN example,
-with 200 followers and the `drop` boundary. A separate panel resolves eigenvalues near zero.
+`boundary --profile paper`: the circle-stable/path-unstable example from
+*NNN-agents*, Figure 3, with 200 followers and the `drop` boundary. A separate
+panel resolves eigenvalues near zero.
 The lower-left panel shows the early spacing field; the lower-right shows the maximum
 leader-relative displacement over agents, on a logarithmic scale. Separating the
 time windows keeps late growth from obscuring the early response. This is a direct
@@ -62,7 +63,7 @@ small wavenumbers; local approximations do not set the full-spectrum axis limits
 pulse of width $N/50$. All four profiles use the same axes. Dashed marks give the
 two leading signal positions. The interval ends before either pulse reaches the
 periodic plotting seam. This is a smooth-pulse illustration; the point impulse
-shown historically has different regularity assumptions.
+in *Signal velocity*, Figure 3(b), has different regularity assumptions.
 
 ## Errors across a parameter family
 
@@ -73,7 +74,7 @@ $A_3/A_1$, using the **predicted value** as denominator. Solid curves show means
 dashed curves maxima over the parameter family. The quick profile has six pairs
 and $N=50,100,200$; the paper profile has the published 30 pairs and
 $N=100,200,400,800,1600,3200$, for each boundary. The quick preview is a demonstration,
-not the complete historical experiment.
+using a smaller parameter grid than the published experiment.
 
 The CSV retains every measurement; the NPZ retains each tail trace for independent
 re-extraction. Extrema are refined by a local parabola. The period estimator is
@@ -99,10 +100,11 @@ asymptotic formulas; no fitted convergence rate is asserted.
 
 ## Redraw and validation
 
-`--redraw` checks the saved data checksum and renders from arrays without running
-simulations. The computation and rendering source digests are recorded separately. Each
-experiment also retains the package source in `source/`, matching its computation
-digest; redraw validates this snapshot when present.
+`--verify` checks the experiment record and saved-file checksums. `--redraw`
+checks the saved numerical data and source snapshot, then renders the arrays
+without running simulations. Computation and rendering source digests are
+recorded separately. Each experiment retains the package source in `source/`,
+matching its computation digest.
 A changed renderer can therefore be used without losing the provenance of the data.
 
 Tests compare Fourier and matrix calculations, dense and sparse propagation,

@@ -5,11 +5,13 @@ style globally. Figure metadata and full parameters belong in the companion reco
 """
 
 from functools import wraps
+
 import numpy as np
-from .style import CAT, SEQ, DIVERGING, plot_style
-from .dispersion import branches, taylor, signal_velocities
-from .analysis import extrema, theory_amplitudes, eigen_reliability
+
+from .analysis import eigen_reliability, extrema, theory_amplitudes
+from .dispersion import branches, signal_velocities, taylor
 from .matrices import system_matrix_line_leaderless
+from .style import CAT, DIVERGING, SEQ, plot_style
 
 
 def _styled(fn):
@@ -47,7 +49,7 @@ def spectrum_figure(st, orders=(1, 2, 3), ax=None, n=1001):
     import matplotlib.pyplot as plt
 
     if ax is not None:
-        th, lam = symbol_curve(st, n)
+        _th, lam = symbol_curve(st, n)
         ax.plot(lam.real.T, lam.imag.T, color=CAT[1], lw=1)
         ax.axvline(0, color="#777777", lw=0.7)
         ax.set(
@@ -127,7 +129,7 @@ def circle_vs_line_figure(st, N=80, bc="drop", ax=None):
         va="bottom",
         transform=ax.transAxes,
         fontsize=9,
-        bbox=dict(facecolor="white", edgecolor="none", alpha=0.9),
+        bbox={"facecolor": "white", "edgecolor": "none", "alpha": 0.9},
     )
     return fig if fig else ax
 
@@ -322,8 +324,8 @@ def convergence_figure(
     st, Ns=(50, 100, 200, 400), bc="regular", v0=1.0, ax=None, nt_per_unit=None
 ):
     """Single-stencil error study; distinct from the paper's parameter-family study."""
-    from .solve import simulate_line
     from .analysis import corrected_amplitudes
+    from .solve import simulate_line
 
     fig, ax = _axes(ax)
     cp, _ = signal_velocities(st)
@@ -357,6 +359,7 @@ def convergence_figure(
 @_styled
 def overview_figure(st, N=120, bc="regular", v0=1.0):
     import matplotlib.pyplot as plt
+
     from .solve import simulate_line
 
     try:

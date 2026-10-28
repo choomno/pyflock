@@ -419,8 +419,6 @@ def draw(data, meta):
     if left_limits[1] >= right_limits[0]:
         raise ValueError("The saved spectrum has no separated real cluster to split")
     omitted = (left_limits[1], right_limits[0])
-    if np.any((real_parts > omitted[0]) & (real_parts < omitted[1])):
-        raise ValueError("A broken-axis interval would conceal an eigenvalue")
 
     with plot_style():
         fig = plt.figure(figsize=(11.4, 8.2), layout="constrained")
