@@ -1,0 +1,228 @@
+"""
+Symbols, eigenvalue branches and signal velocities.
+
+For a circulant (circle) flock the Fourier mode exp(i k theta) diagonalises both
+Laplacians, with eigenvalues
+
+    nu_x(theta) = gx sum_j rx[j+2] exp(i j theta)
+    nu_v(theta) = gv sum_j rv[j+2] exp(i j theta)
+
+and the system matrix M = [[0, I], [gx Lx, gv Lv]] then has eigenvalues solving
+
+    lambda^2 - nu_v(theta) lambda - nu_x(theta) = 0.
+
+Under the hypotheses of ``taylor``, with a > 0, each branch expands near theta = 0 as
+
+    lambda_sigma(theta) = i mu_sigma theta - D_sigma theta^2 + i beta_sigma theta^3 + ...
+
+whose first three coefficients are, respectively, the (negated) SIGNAL VELOCITY,
+a DIFFUSION coefficient and a DISPERSION coefficient.  ``taylor`` computes these
+from the stencil moments; ``matlab_fq`` reproduces the closed forms used in
+Cantos's ``flock45sim_function.m``, where ``f = mu`` and ``q = -D``.
+"""
+
+from __future__ import annotations
+
+from math import factorial
+import numpy as np
+
+from .stencil import Stencil
+
+__all__ = [
+    "nu_x",
+    "nu_v",
+    "branches",
+    "signal_velocities",
+    "phase_velocity",
+    "taylor",
+    "coefficients",
+    "matlab_fq",
+]
+
+_J = np.arange(-2, 3)
+
+
+def nu_x(theta, st: Stencil):
+    theta = np.asarray(theta, dtype=float)
+    return st.gx * np.sum(st.rx * np.exp(1j * np.multiply.outer(theta, _J)), axis=-1)
+
+
+def nu_v(theta, st: Stencil):
+    theta = np.asarray(theta, dtype=float)
+    return st.gv * np.sum(st.rv * np.exp(1j * np.multiply.outer(theta, _J)), axis=-1)
+
+
+def branches(theta, st: Stencil, labelling: str = "continuous"):
+    """Both roots of lambda^2 - nu_v lambda - nu_x = 0, shape (2,) + theta.shape.
+
+    labelling:
+      'continuous' -- track the roots outward along the supplied |theta| values and
+                      conjugate-reflect to negative theta, swapping the two branches
+                      when a < 0 to preserve the analytic labels of ``taylor``.
+                      Near zero, branch 0 has
+                      the larger signal velocity when the hypotheses of ``taylor``
+                      hold and a > 0. Tracking through a root collision depends on
+                      the sampling; this is not a test of analyticity.
+      'by_imag'    -- branch 0 has the larger imaginary part. The two imaginary
+                      parts need not have opposite signs.
+    """
+    theta = np.atleast_1d(np.asarray(theta, dtype=float))
+    shape = theta.shape
+    tf = theta.ravel()
+    nv = nu_v(tf, st)
+    nxx = nu_x(tf, st)
+    disc = np.sqrt((nv**2 / 4.0 + nxx).astype(complex))
+    lo, hi = nv / 2.0 - disc, nv / 2.0 + disc
+
+    if labelling == "by_imag":
+        first = np.where(lo.imag >= hi.imag, lo, hi)
+        second = np.where(lo.imag >= hi.imag, hi, lo)
+        return np.stack([first, second]).reshape((2,) + shape)
+
+    if labelling != "continuous":
+        raise ValueError(f"unknown labelling {labelling!r}")
+
+    # Track along |theta|; conjugation swaps the local analytic branches when a < 0.
+    a = st.a
+    at = np.abs(tf)
+    order = np.argsort(at, kind="stable")
+    out = np.empty((2, tf.size), dtype=complex)
+    prev = np.array([0j, 0j])
+    slope = np.array(
+        [
+            1j * (st.moment_v(1) / 2 - np.sqrt(a + 0j)),
+            1j * (st.moment_v(1) / 2 + np.sqrt(a + 0j)),
+        ]
+    )
+    last = 0.0
+    for idx in order:
+        t = at[idx]
+        # recompute on |theta| so the sweep is monotone
+        nvv = nu_v(np.array([t]), st)[0]
+        d = np.sqrt(complex(nvv**2 / 4.0 + nu_x(np.array([t]), st)[0]))
+        roots = np.array([nvv / 2.0 - d, nvv / 2.0 + d])
+        pred = prev + slope * (t - last)
+        if abs(roots[0] - pred[0]) + abs(roots[1] - pred[1]) > abs(
+            roots[1] - pred[0]
+        ) + abs(roots[0] - pred[1]):
+            roots = roots[::-1]
+        if t > last:
+            slope = (roots - prev) / (t - last)
+        prev, last = roots, t
+        if tf[idx] >= 0:
+            out[:, idx] = roots
+        else:
+            out[:, idx] = np.conj(roots[::-1] if a < 0 else roots)
+    return out.reshape((2,) + shape)
+
+
+def signal_velocities(st: Stencil) -> tuple[float, float]:
+    """The two real long-wave velocities, in decreasing order.
+
+    They need not have opposite signs. Requires decentralized coupling, zero first
+    position moment, and a > 0; these conditions do not establish stability.
+    """
+    if st.a <= 0:
+        raise ValueError("real distinct signal velocities require a > 0")
+    mu = taylor(st, order=1)[:, 1].imag  # lambda ~ i mu theta
+    c = -mu
+    return float(max(c)), float(min(c))
+
+
+def phase_velocity(theta, st: Stencil, labelling: str = "continuous"):
+    """c_m = -Im(lambda)/theta for each branch (the quantity plotted by flock.m)."""
+    theta = np.atleast_1d(np.asarray(theta, dtype=float))
+    lam = branches(theta, st, labelling)
+    with np.errstate(divide="ignore", invalid="ignore"):
+        return -lam.imag / theta
+
+
+def taylor(st: Stencil, order: int = 3, h: float = 1e-3, fit: int = 8) -> np.ndarray:
+    """Taylor coefficients of both branches at theta = 0.
+
+    Returns an array ``c`` of shape (2, order+1) with
+    ``lambda_branch(theta) ~ sum_n c[branch, n] theta**n``.
+
+    For a > 0, ``c[:,1] = i mu``, ``c[:,2] = -D``, ``c[:,3] = i beta``.
+    Coefficients follow recursively from the symbol moments, without numerical
+    differentiation. Requires decentralized coupling, I_x,1 = 0 and a != 0.
+    Otherwise fractional powers or coincident first-order roots need separate
+    treatment. Negative a is allowed here; then the slopes have nonzero real parts.
+
+    ``h`` and ``fit`` are retained for compatibility and have no effect.
+    """
+    if (
+        isinstance(order, (bool, np.bool_))
+        or not isinstance(order, (int, np.integer))
+        or order < 0
+    ):
+        raise ValueError("order must be a nonnegative integer")
+    for weights in (st.rx, st.rv):
+        if abs(weights.sum()) > 1e-12 * max(
+            np.abs(weights).sum(), np.finfo(float).tiny
+        ):
+            raise ValueError("Taylor expansion requires decentralized coupling")
+    moment_scale = abs(st.gx) * np.sum(np.abs(st.rx * _J))
+    if abs(st.moment_x(1)) > 1e-12 * max(moment_scale, np.finfo(float).tiny):
+        raise ValueError(
+            "Taylor expansion requires zero first position moment; otherwise roots may have fractional powers"
+        )
+    scale = st.moment_v(1) ** 2 / 4 + abs(st.moment_x(2)) / 2
+    if abs(st.a) <= 64 * np.finfo(float).eps * scale or st.a == 0:
+        raise ValueError(
+            "Taylor expansion requires distinct first-order roots (a != 0)"
+        )
+
+    out = np.zeros((2, order + 1), dtype=complex)
+    if order == 0:
+        return out
+    out[:, 1] = 1j * (st.moment_v(1) / 2 + np.array([-1, 1]) * np.sqrt(st.a + 0j))
+    vx = [st.moment_v(k) * 1j**k / factorial(k) for k in range(order + 1)]
+    xx = [st.moment_x(k) * 1j**k / factorial(k) for k in range(order + 2)]
+    # Coefficient of theta**(n+1) in lambda**2 - nu_v*lambda - nu_x.
+    for branch in range(2):
+        c = out[branch]
+        for n in range(2, order + 1):
+            forcing = xx[n + 1] + sum(vx[k] * c[n + 1 - k] for k in range(2, n + 1))
+            forcing -= sum(c[k] * c[n + 1 - k] for k in range(2, n))
+            c[n] = forcing / (2 * c[1] - vx[1])
+    return out
+
+
+def coefficients(st: Stencil) -> dict:
+    """Convenience: signal velocity, diffusion and dispersion for both branches."""
+    if st.a <= 0:
+        raise ValueError("real long-wave coefficients require a > 0")
+    c = taylor(st, order=3)
+    mu = c[:, 1].imag
+    D = -c[:, 2].real
+    beta = c[:, 3].imag
+    res = {}
+    for lbl, i in (("+", int(np.argmax(-mu))), ("-", int(np.argmin(-mu)))):
+        res[lbl] = {"c": float(-mu[i]), "D": float(D[i]), "beta": float(beta[i])}
+    return res
+
+
+def matlab_fq(st: Stencil) -> dict:
+    """The closed forms used in ``flock45sim_function.m``.
+
+    Returns ``{'fm','fp','qm','qp'}`` where (verified to machine precision against
+    ``taylor``) ``f_sigma = mu_sigma`` and ``q_sigma = -D_sigma``.  Requires the
+    normalisation r_0 = 1 that the MATLAB drivers assume.
+    """
+    gx, gv = st.gx, st.gv
+    # Check the assumptions of the published closed form before dividing by S.
+    signal_velocities(st)
+    if not (
+        np.isclose(st.ax0, 1, rtol=0, atol=1e-12)
+        and np.isclose(st.av0, 1, rtol=0, atol=1e-12)
+    ):
+        raise ValueError("matlab_fq requires diagonal stencil weights equal to 1")
+    B = st.bv1 + 2 * st.bv2
+    S = np.sqrt(gv**2 * B**2 - 2 * gx * (4 + 3 * st.ax1))
+    fm = 0.5 * gv * B - 0.5 * S
+    fp = 0.5 * gv * B + 0.5 * S
+    num = gv**2 * B * (4 + 3 * st.av1) + 2 * gx * st.bx1
+    qm = 0.25 * (gv * (4 + 3 * st.av1) - num / S)
+    qp = 0.25 * (gv * (4 + 3 * st.av1) + num / S)
+    return {"fm": float(fm), "fp": float(fp), "qm": float(qm), "qp": float(qp)}
