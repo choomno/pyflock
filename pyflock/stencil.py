@@ -23,7 +23,7 @@ with next nearest neighbor interaction", Definition 2.1 and Section 4.
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 
 import numpy as np
 
@@ -42,7 +42,6 @@ class Stencil:
     gv: float
     name: str = ""
     notes: str = ""
-    _checked: bool = field(default=False, repr=False, compare=False)
 
     def __post_init__(self):
         for name in ("rx", "rv"):
@@ -165,7 +164,7 @@ class Stencil:
             self.notes,
         )
 
-    def __repr__(self):  # pragma: no cover - cosmetic
+    def __repr__(self):
         nm = f" {self.name!r}" if self.name else ""
         return (
             f"<Stencil{nm} gx={self.gx:g} gv={self.gv:g}\n"

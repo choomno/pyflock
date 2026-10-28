@@ -4,7 +4,8 @@ from itertools import pairwise
 
 import numpy as np
 import pytest
-from scipy.linalg import expm
+from scipy.linalg import block_diag, expm, null_space
+from scipy.optimize import linear_sum_assignment
 
 import pyflock as pf
 from pyflock.cases import CASES
@@ -57,16 +58,23 @@ def test_branches_match_circle_eigenvalues():
     st = pf.case("random_example")
     N = 48
     M = pf.system_matrix_circle(st, N)
-    ev = np.linalg.eigvals(M)
-    th = 2 * np.pi * np.fft.fftfreq(N, d=1.0 / N) / N
+    # The coherent mode is a defective double zero; perturbing it by roundoff
+    # splits its eigenvalues by O(sqrt(eps)). Remove that invariant subspace
+    # geometrically before comparing the well-separated nonzero modes.
+    complement = null_space(np.ones((1, N)))
+    basis = block_diag(complement, complement)
+    restricted = basis.T @ M @ basis
+    np.testing.assert_allclose(M @ basis, basis @ restricted, atol=2e-14, rtol=0)
+    ev = np.linalg.eigvals(restricted)
+    th = 2 * np.pi * np.arange(1, N) / N
     lam = pf.branches(th, st, "by_imag").ravel()
-    rem = list(lam)
-    worst = 0.0
-    for e in ev:
-        j = int(np.argmin([abs(e - r) for r in rem]))
-        worst = max(worst, abs(e - rem[j]))
-        rem.pop(j)
-    assert worst < 1e-8
+    rows, cols = linear_sum_assignment(abs(ev[:, None] - lam[None, :]))
+    np.testing.assert_allclose(ev[rows], lam[cols], atol=2e-12, rtol=0)
+    # Check the omitted coherent position/velocity vectors by their exact action.
+    position = np.r_[np.ones(N), np.zeros(N)]
+    velocity = np.r_[np.zeros(N), np.ones(N)]
+    np.testing.assert_allclose(M @ position, 0, atol=2e-14, rtol=0)
+    np.testing.assert_allclose(M @ velocity, position, atol=2e-14, rtol=0)
 
 
 def test_branch_coefficients_match_moment_closed_forms():
@@ -285,13 +293,20 @@ def test_leaderless_spectrum_is_full_spectrum_minus_leader_double_zero():
     assert len(full) == 2 and max(abs(f) for f in full) < 1e-6
 
 
-def test_eigen_reliability_separates_well_and_ill_conditioned_cases():
+def test_eigen_reliability_reports_sensitivity_for_well_and_ill_conditioned_cases():
     good = pf.eigen_reliability(pf.system_matrix_line_leaderless(pf.case("type_I"), 60))
     assert good["reliable"] and good["kappa"] < 1e3 and good["eigenvalue"].real > 0
-    bad = pf.eigen_reliability(
-        pf.system_matrix_line_leaderless(pf.case("two_positive_velocities"), 60)
-    )
-    assert bad["kappa"] > 1e10 and not bad["reliable"]
+    matrix = pf.system_matrix_line_leaderless(pf.case("two_positive_velocities"), 60)
+    bad = pf.eigen_reliability(matrix)
+    assert bad["kappa"] > 1e10 and bad["heuristic"]
+    # The computed spectral abscissa itself is sensitive to the eigensolver;
+    # the heuristic flag promises only this conditional numerical criterion.
+    estimate = bad["kappa"] * np.finfo(float).eps * np.linalg.norm(matrix, 2)
+    assert bad["tol"] == pytest.approx(estimate, rel=2e-15)
+    assert bad["reliable"] == (estimate < 0.1 * abs(bad["eigenvalue"].real))
+    # This exact Jordan block gives a platform-independent unreliable case.
+    defective = pf.eigen_reliability(np.array([[0.0, 1.0], [0.0, 0.0]]))
+    assert defective["eigenvalue"] == 0 and not defective["reliable"]
 
 
 # ------------------------------------------------------ least-stable eigenvalue on the line

@@ -43,14 +43,29 @@ __all__ = [
 _J = np.arange(-2, 3)
 
 
-def nu_x(theta, st: Stencil):
+def _symbol(theta, weights, gain):
+    """Evaluate the finite Fourier symbol without subtracting nearby cosines."""
     theta = np.asarray(theta, dtype=float)
-    return st.gx * np.sum(st.rx * np.exp(1j * np.multiply.outer(theta, _J)), axis=-1)
+    angles = theta[..., None] * np.array([1, 2])
+    positive, negative = weights[3:], weights[1::-1]
+    real = weights.sum() - 2 * np.sum(
+        (positive + negative) * np.sin(angles / 2) ** 2, axis=-1
+    )
+    odd = positive - negative
+    # sin(2 theta)-2 sin(theta)=-4 sin(theta) sin(theta/2)^2;
+    # keep the cubic term when the first position moment vanishes.
+    imaginary = np.sin(theta) * (
+        odd[0] + 2 * odd[1] - 4 * odd[1] * np.sin(theta / 2) ** 2
+    )
+    return gain * (real + 1j * imaginary)
+
+
+def nu_x(theta, st: Stencil):
+    return _symbol(theta, st.rx, st.gx)
 
 
 def nu_v(theta, st: Stencil):
-    theta = np.asarray(theta, dtype=float)
-    return st.gv * np.sum(st.rv * np.exp(1j * np.multiply.outer(theta, _J)), axis=-1)
+    return _symbol(theta, st.rv, st.gv)
 
 
 def branches(theta, st: Stencil, labelling: str = "continuous"):
@@ -138,7 +153,7 @@ def phase_velocity(theta, st: Stencil, labelling: str = "continuous"):
         return -lam.imag / theta
 
 
-def taylor(st: Stencil, order: int = 3, h: float = 1e-3, fit: int = 8) -> np.ndarray:
+def taylor(st: Stencil, order: int = 3) -> np.ndarray:
     """Taylor coefficients of both branches at theta = 0.
 
     Returns an array ``c`` of shape (2, order+1) with
@@ -150,8 +165,6 @@ def taylor(st: Stencil, order: int = 3, h: float = 1e-3, fit: int = 8) -> np.nda
     differentiation. Requires decentralized coupling, I_x,1 = 0 and a != 0.
     Otherwise fractional powers or coincident first-order roots need separate
     treatment. Negative a is allowed here; then the slopes have nonzero real parts.
-
-    ``h`` and ``fit`` are accepted but ignored; the coefficients are analytic.
     """
     if (
         isinstance(order, (bool, np.bool_))

@@ -48,7 +48,12 @@ class Extremum:
 def extrema(
     t: np.ndarray, w: np.ndarray, nmax: int = 8, refine: bool = True
 ) -> list[Extremum]:
-    """Local extrema of w(t), in time order, with optional parabolic refinement."""
+    """Local extrema of w(t), in time order, with optional parabolic refinement.
+
+    A flat extremum is reported once at the midpoint of its time interval,
+    without interpolation. A plateau in a monotone trace is not an extremum.
+    Endpoints are omitted because both neighbouring slopes must be known.
+    """
     t = np.asarray(t, dtype=float)
     w = np.asarray(w, dtype=float)
     if (
@@ -64,13 +69,14 @@ def extrema(
         )
     _positive_integer(nmax, "nmax")
     d = np.diff(w)
-    s = np.sign(d)
-    s[s == 0] = 1
-    idx = np.where(np.diff(s) != 0)[0] + 1
+    nonzero = np.flatnonzero(d)
+    turns = np.flatnonzero(np.diff(np.sign(d[nonzero])) != 0)
     out: list[Extremum] = []
-    for i in idx:
-        tt, ww = float(t[i]), float(w[i])
-        if refine and 1 <= i < len(w) - 1:
+    for turn in turns:
+        start, end = nonzero[turn] + 1, nonzero[turn + 1]
+        i = int((start + end) // 2)
+        tt, ww = float(t[start] + (t[end] - t[start]) / 2), float(w[i])
+        if refine and start == end:
             left, right = t[i] - t[i - 1], t[i + 1] - t[i]
             slope_left = (w[i] - w[i - 1]) / left
             slope_right = (w[i + 1] - w[i]) / right
@@ -392,10 +398,22 @@ def stability_map(
     family      : callable param -> Stencil (e.g. ``velocity_asymmetry_family(gx, gv)``)
     theory      : optional callable (Stencil, N) -> predicted Re, e.g. least_stable_eigenvalue
     reliability : compute eigenvalue condition numbers and the sensitivity heuristic
+
+    ``params`` must be a nonempty finite vector; ``Ns`` must be a nonempty
+    vector of positive integers. Boolean and floating-point sizes are rejected.
     """
     from .matrices import system_matrix_line_leaderless
 
     params = np.asarray(params, dtype=float)
+    if params.ndim != 1 or params.size == 0 or not np.isfinite(params).all():
+        raise ValueError("params must be a nonempty finite vector")
+    # Preserve scalar types until validation: a mixed [1, True] must not become
+    # the integer array [1, 1], and a floating size must not be truncated.
+    Ns = np.asarray(Ns, dtype=object)
+    if Ns.ndim != 1 or Ns.size == 0:
+        raise ValueError("Ns must be a nonempty vector of positive integers")
+    for N in Ns:
+        _positive_integer(N, "each entry of Ns")
     Ns = np.asarray(Ns, dtype=int)
     shape = (Ns.size, params.size)
     max_re = np.empty(shape)

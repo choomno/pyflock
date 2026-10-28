@@ -44,7 +44,6 @@ def test_moment_expansion_has_seventh_order_quadratic_residual():
     residual = np.abs(lam**2 - nv * lam - nx)
     assert np.all((residual[:, :-1] / residual[:, 1:]) > 120)
     assert np.all((residual[:, :-1] / residual[:, 1:]) < 135)
-    assert pf.taylor(st, 5, h=1e-8, fit=2) == pytest.approx(coefficients, abs=0)
 
 
 def test_taylor_rejects_fractional_and_coincident_roots():
@@ -213,6 +212,87 @@ def test_extrema_refinement_handles_nonuniform_times():
     values = 3 - (times - 1) ** 2
     (extremum,) = pf.extrema(times, values)
     assert (extremum.t, extremum.value) == pytest.approx((1.0, 3.0))
+
+
+@pytest.mark.parametrize("values", [[3, 2, 2, 1], [1, 2, 2, 3], [2, 2, 2, 2]])
+def test_monotone_plateaus_are_not_extrema(values):
+    assert pf.extrema(np.arange(len(values)), values) == []
+
+
+@pytest.mark.parametrize("sign", [-1, 1])
+def test_flat_extremum_is_reported_once_at_the_interval_midpoint(sign):
+    times = np.array([0.0, 0.3, 0.8, 1.7, 2.0])
+    values = sign * np.array([0, 2, 2, 2, 0])
+    (peak,) = pf.extrema(times, values)
+    assert (peak.t, peak.value, peak.index) == pytest.approx((1.0, 2 * sign, 2))
+
+
+@pytest.mark.parametrize("sparse", [False, True])
+@pytest.mark.parametrize("time_scale", [1.0, 1e-16, 1e-100])
+def test_nonuniform_propagation_is_invariant_under_change_of_time_units(
+    sparse, time_scale
+):
+    generator = np.array([[0.0, 1.0], [-1.0, 0.0]]) / time_scale
+    matrix = csr_matrix(generator) if sparse else generator
+    times = time_scale * np.array([0.0, 1.0, 3.0])
+    actual = pf.propagate(matrix, [1.0, 0.0], times)
+    expected = np.column_stack((np.cos([0, 1, 3]), -np.sin([0, 1, 3])))
+    assert actual == pytest.approx(expected, abs=2e-14)
+
+
+@pytest.mark.parametrize("sparse", [False, True])
+def test_a_large_common_time_offset_does_not_hide_nonuniform_intervals(sparse):
+    times = np.array([1e16, 1e16 + 2, 1e16 + 6])
+    generator = np.array([[1j]])
+    matrix = csr_matrix(generator) if sparse else generator
+    actual = pf.propagate(matrix, [1], times)
+    assert actual[:, 0] == pytest.approx(np.exp(1j * times), abs=2e-15)
+
+
+def test_fourier_symbol_resolves_quadratic_terms_at_small_wave_numbers():
+    theta = np.array([[0.0, 1e-8], [-1e-9, 1e-12]])
+    st = pf.nn_stencil(-1.3, -0.7, -0.5, -0.25)
+    expected_x = -2.6 * np.sin(theta / 2) ** 2
+    expected_v = -1.4 * np.sin(theta / 2) ** 2 - 0.35j * np.sin(theta)
+    np.testing.assert_allclose(pf.nu_x(theta, st), expected_x, rtol=2e-15, atol=0)
+    np.testing.assert_allclose(pf.nu_v(theta, st), expected_v, rtol=2e-15, atol=0)
+    assert pf.nu_x(1e-9, st) == pytest.approx(-6.5e-19, rel=2e-15, abs=0)
+
+
+def test_fourier_symbols_retain_nonzero_row_sums():
+    st = pf.Stencil([0.2, -0.5, 1.3, -0.2, 0.1], [0, 0, 2, 0, 0], -2, 3)
+    theta = np.array([0.0, 0.2, -0.7, np.pi])
+    offsets = np.arange(-2, 3)
+    expected = -2 * np.exp(1j * theta[:, None] * offsets) @ st.rx
+    assert pf.nu_x(theta, st) == pytest.approx(expected, abs=1e-15)
+    assert pf.nu_v(theta, st) == pytest.approx(np.full(4, 6), abs=0)
+
+
+def test_next_nearest_symbol_resolves_a_cubic_odd_term_at_zero_first_moment():
+    import mpmath as mp
+
+    st = pf.Stencil([0.125, -0.5, 1, -1, 0.375], [0, -0.5, 1, -0.5, 0], -2, -1)
+    theta = np.array([1e-8, 1e-10, -1e-12])
+    with mp.workdps(80):
+        expected = np.array(
+            [
+                complex(
+                    -2
+                    * sum(
+                        mp.mpf(float(weight)) * mp.exp(1j * offset * mp.mpf(float(t)))
+                        for offset, weight in zip(range(-2, 3), st.rx)
+                    )
+                )
+                for t in theta
+            ]
+        )
+    # Compare real and imaginary parts separately: the cubic part is much smaller.
+    np.testing.assert_allclose(
+        pf.nu_x(theta, st).real, expected.real, rtol=2e-15, atol=0
+    )
+    np.testing.assert_allclose(
+        pf.nu_x(theta, st).imag, expected.imag, rtol=2e-15, atol=0
+    )
 
 
 def test_tail_only_dense_trace_matches_full_and_independent_exponentials():

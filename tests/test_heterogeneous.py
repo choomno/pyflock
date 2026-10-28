@@ -250,3 +250,13 @@ def test_tail_only_rejects_invalid_chunk_size(chunk_size):
     model = ht.HeterogeneousNN([1, 2], [2, 3])
     with pytest.raises(ValueError, match="chunk_size"):
         ht.simulate_tail(model, [0, 1], chunk_size=chunk_size)
+
+
+def test_small_nonuniform_time_grid_matches_a_single_follower_closed_form():
+    scale = 1e-16
+    model = ht.HeterogeneousNN([1 / scale**2] * 2, [1 / scale] * 2)
+    times = scale * np.array([0.0, 1.0, 3.0])
+    tau = times / scale
+    expected = -2 / np.sqrt(3) * np.exp(-tau / 2) * np.sin(np.sqrt(3) * tau / 2)
+    _, tail = ht.simulate_tail(model, times, v0=1 / scale)
+    assert tail == pytest.approx(expected, abs=2e-15)

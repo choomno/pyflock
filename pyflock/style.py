@@ -62,4 +62,7 @@ def apply_style(rc=None):
 
 
 def agent_colors(n):
-    return SEQ(np.linspace(0.3, 1, max(n, 2)))
+    """Return exactly n RGBA colours, from light to dark, for n agents."""
+    if isinstance(n, (bool, np.bool_)) or not isinstance(n, (int, np.integer)) or n < 0:
+        raise ValueError("n must be a nonnegative integer")
+    return SEQ(np.linspace(0.3, 1, n))

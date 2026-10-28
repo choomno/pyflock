@@ -103,7 +103,7 @@ def laplacian_line(
                     continue
                 add(k, min(max(k + j, 0), N), r[j + 2])
             add(k, k, r[2])
-        elif bc == "regular":
+        else:  # regular: the boundary name was validated above
             if k == n - 1:
                 add(k, k - 1, -1.0)
                 add(k, k, 1.0)
