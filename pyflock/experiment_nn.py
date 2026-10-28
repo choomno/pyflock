@@ -1,7 +1,7 @@
 """Source-specific nearest-neighbour experiments and matched-Laplacian responses.
 
 Compute returns plain arrays and JSON-compatible specifications; draw uses no solver.
-The historical figures provide experiments, not plotting or numerical conventions.
+Paper figure references identify the parameters and observables being compared.
 """
 
 import numpy as np
@@ -40,7 +40,7 @@ def compute_stable(profile="quick", jobs=1, checkpoint=None):
     meta = _meta(
         "nn_stable_spectra",
         profile,
-        "signalvelocity.pdf",
+        "Cantos, Veerman & Hammond (2016), Signal velocity in oscillator arrays, DOI 10.1140/epjst/e2016-02665-0",
         "Fig.1, p.4",
         "How do the two coupling spectra determine the stable system spectrum?",
     )
@@ -93,7 +93,7 @@ def compute_instability(profile="quick", jobs=1, checkpoint=None):
     meta = _meta(
         "nn_instability",
         profile,
-        "signalvelocity.pdf",
+        "Cantos, Veerman & Hammond (2016), Signal velocity in oscillator arrays, DOI 10.1140/epjst/e2016-02665-0",
         "Fig.2, p.6",
         "How do position asymmetry and a wrong-sign gain destabilize the circle?",
     )
@@ -145,7 +145,7 @@ def compute_phase(profile="quick", jobs=1, checkpoint=None):
     meta = _meta(
         "nn_phase_speeds",
         profile,
-        "signalvelocity.pdf",
+        "Cantos, Veerman & Hammond (2016), Signal velocity in oscillator arrays, DOI 10.1140/epjst/e2016-02665-0",
         "Fig.3(a), p.11",
         "Which phase speeds survive high-frequency damping?",
     )
@@ -191,7 +191,7 @@ def draw_phase(data, meta):
 
 
 def compute_pulse(profile="quick", jobs=1, checkpoint=None):
-    # Historical size retained in both profiles; quick reduces time samples only.
+    # The published size is retained in both profiles; quick reduces time samples only.
     N = 200
     st = nn_stencil(-1.0, -3.0, -0.5, -7 / 20)
     times = np.linspace(0, 150, 601 if profile == "paper" else 301)
@@ -209,7 +209,7 @@ def compute_pulse(profile="quick", jobs=1, checkpoint=None):
     meta = _meta(
         "nn_pulse_comparison",
         profile,
-        "signalvelocity.pdf",
+        "Cantos, Veerman & Hammond (2016), Signal velocity in oscillator arrays, DOI 10.1140/epjst/e2016-02665-0",
         "Fig.3(b), p.11",
         "How does smoothing change an impulse response under identical couplings?",
     )
@@ -221,7 +221,7 @@ def compute_pulse(profile="quick", jobs=1, checkpoint=None):
         initial_data="Zero displacement; (a) velocity 20 at agent0, (b) periodic Gaussian sigma3 normalized to sum20.",
         solver="FFT closed-form mode evolution",
         observable="Velocity field by agent index and time",
-        relation_to_source="Historical impulse size, gains, weights, delta, and t<=150 retained. Agent coordinate replaces moving physical position; smooth initial data comparison is new.",
+        relation_to_source="Published impulse size, gains, weights, delta, and t<=150 retained. Agent coordinate replaces moving physical position; smooth initial data comparison is new.",
         normalization="Both inputs have equal total velocity20; shared symmetric-log color normalization (linear threshold.05) without clipping.",
         approximation_status="Impulse lacks theorem Fourier decay. Gaussian is finite smooth-data comparison; dashed lines show leading signal positions, with periodic wrapping.",
     )
@@ -409,7 +409,7 @@ def compute_matched(profile="quick", jobs=1, checkpoint=None):
     meta = _meta(
         "matched_amplification",
         profile,
-        "flocks_final.pdf; Symmetry and Stability of Homogeneous Flocks.pdf",
+        "Tangerman, Veerman & Stosic (2012), Asymmetric decentralized flocks; Veerman (2010), Symmetry and stability of homogeneous flocks",
         "2012 Fig.2 p.2; position paper Figs.2–3 p.6",
         "How can stable matched-Laplacian paths have large impulse and harmonic responses?",
     )
@@ -446,7 +446,7 @@ def draw_matched(data, meta):
         for i, rho in enumerate(meta["rhos"]):
             t = data[f"{i}_t"]
             x = data[f"{i}_xrel"]
-            # Every trajectory is retained, as in the historical experiment.
+            # Every trajectory is retained, as in the paper's experiment.
             for k in range(x.shape[1]):
                 axes[0, i].plot(
                     x[:, k], t, color=SEQ(0.35 + 0.6 * k / (x.shape[1] - 1)), lw=0.35

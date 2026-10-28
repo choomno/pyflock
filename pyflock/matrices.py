@@ -1,24 +1,23 @@
 """
 Laplacians and system matrices.
 
-Line ("path") geometry, following ``flock45.m``: agents are numbered 0..N with agent 0
-the LEADER, whose row is identically zero so that it travels at whatever velocity it is
-given.  The state is z = (z_0..z_N, zdot_0..zdot_N) and
+Path geometry: agents are numbered 0..N with leader 0. Its acceleration row
+is zero, so it retains its prescribed velocity. The state is
+z = (z_0..z_N, zdot_0..zdot_N) and
 
     d/dt (z, zdot) = M (z, zdot),      M = [[0, I], [gx Lx, gv Lv]].
 
 Boundary conventions for agents that are missing neighbours:
 
   'drop'    Discard out-of-range neighbours and set the diagonal to minus the sum of the
-            weights that remain, so every row still sums to zero.  This is the "second
-            version" in ``flock45.m`` -- the one actually used -- and for a
-            nearest-neighbour stencil it coincides with the "variable mass" boundary
-            condition of Cantos-Hammond-Veerman, Definition 1.1.
-  'fold'    Add the weight of a missing neighbour onto the nearest in-range one, and
-            rescale the last row by 1/|r_{-2}+r_{-1}|.  This is the commented-out "first
-            version" in ``flock45.m``.
+            weights that remain, so every row still sums to zero. For nearest
+            neighbours this is the variable-mass boundary in Cantos-Hammond-Veerman,
+            Transients, Definition 1.
+  'fold'    Clamp missing neighbour indices to the endpoints. For N>=2, when
+            r_{-2}+r_{-1} is nonzero, the last row instead has diagonal r_0 and
+            predecessor weights r_{-j}/|r_{-2}+r_{-1}| for j=1,2.
   'regular' Nearest-neighbour only: the last agent uses zddot_N = gx (z_N - z_{N-1}) +
-            gv (zdot_N - zdot_{N-1}), i.e. chi = 1 in Definition 1.2 of the same paper.
+            gv (zdot_N - zdot_{N-1}), the unit terminal coefficient in Transients.
 
 Circle geometry: both Laplacians are circulant, built from the same stencil.
 """
@@ -31,12 +30,12 @@ from scipy import sparse as sp
 from .stencil import Stencil
 
 __all__ = [
-    "laplacian_line",
+    "BOUNDARY_CONDITIONS",
     "laplacian_circle",
+    "laplacian_line",
+    "system_matrix_circle",
     "system_matrix_line",
     "system_matrix_line_leaderless",
-    "system_matrix_circle",
-    "BOUNDARY_CONDITIONS",
 ]
 
 BOUNDARY_CONDITIONS = ("drop", "fold", "regular")

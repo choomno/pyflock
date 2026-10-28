@@ -423,12 +423,15 @@ def compute_continuum(profile="quick", jobs=1, checkpoint=None):
     # Weighted spatial RMS is exactly |amplitude difference|/sqrt(2) for
     # a resolved non-Nyquist sine mode on each periodic grid.
     error = np.max(np.abs(discrete - continuum), axis=1) / np.sqrt(2)
-    roots = lambda q: np.array(
-        [
-            -0.1 * q / 2 + 1j * np.sqrt(q - (0.1 * q / 2) ** 2),
-            -0.1 * q / 2 - 1j * np.sqrt(q - (0.1 * q / 2) ** 2),
-        ]
-    )
+
+    def roots(q):
+        return np.array(
+            [
+                -0.1 * q / 2 + 1j * np.sqrt(q - (0.1 * q / 2) ** 2),
+                -0.1 * q / 2 - 1j * np.sqrt(q - (0.1 * q / 2) ** 2),
+            ]
+        )
+
     lambdas = np.array([roots(q) for q in k2h])
     exact = roots(k * k)
     arrays = {

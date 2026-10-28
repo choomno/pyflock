@@ -1,4 +1,4 @@
-"""Transfer roots and a numerical companion to the historical spectral schematic."""
+"""Transfer roots and finite spectra for the matched-coupling papers."""
 
 import numpy as np
 from scipy.linalg import eigvalsh_tridiagonal
@@ -39,7 +39,7 @@ def compute_roots(profile="quick", jobs=1, checkpoint=None):
         "experiment": "matched_transfer_roots",
         "profile": profile,
         "schema": 1,
-        "source": "flocks_final.pdf, Eq.(12)–(14), Fig.3 p.9",
+        "source": "Tangerman, Veerman & Stosic (2012), Asymmetric decentralized flocks, Eqs.(12)–(14), Fig.3",
         "question": "How do spatial transfer roots change across symmetric coupling?",
         "f": -1.0,
         "g": -1.0,
@@ -161,7 +161,7 @@ def compute_spectra(profile="quick", jobs=1, checkpoint=None):
         "experiment": "matched_spectra",
         "schema": 1,
         "profile": profile,
-        "source": "Symmetry and Stability of Homogeneous Flocks, Fig.4 p.6; flocks_final.pdf Theorem2.3 p.4",
+        "source": "Veerman (2010), Symmetry and stability of homogeneous flocks, Fig.4; Tangerman, Veerman & Stosic (2012), Asymmetric decentralized flocks, Theorem2.3",
         "N": N,
         "rhos": rhos.tolist(),
         "f": -1.0,
@@ -213,7 +213,7 @@ def draw_spectra(data, meta):
         axes[0, 0].set_ylabel("Imaginary part")
         axes[1, 0].set_ylabel("Imaginary part")
         fig.suptitle(
-            "Matched-coupling path spectra: N=100, f=-1, g=-2\nNumerical companion to a historical schematic",
+            "Matched-coupling path spectra: N=100, f=-1, g=-2\nComparison with the paper's spectral schematic",
             fontsize=11,
         )
         return fig

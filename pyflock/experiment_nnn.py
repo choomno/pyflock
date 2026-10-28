@@ -1,7 +1,7 @@
 """Next nearest neighbour examples and restricted validation inspired by Figure 8.
 
-The historical 500+500 parameter files are absent. The ensemble here has an
-explicit new selection rule and must not be described as the original sample.
+The paper's ensemble members are unavailable. The ensemble here has an explicit
+new selection rule and is distinguished from the sample used in Figure 8.
 """
 
 from __future__ import annotations
@@ -106,7 +106,7 @@ def compute_types(profile="quick", jobs=1, checkpoint=None):
         examples=specs,
         solver="Floating-point matrix exponential, dense for N<200 and sparse otherwise.",
         source_corrections=[
-            "Figure 7 prints rho_x,-1=-15/4, violating the zero row sum by -15/2. The surviving MATLAB implementation uses +15/4, which is used here."
+            "Figure 7 prints rho_x,-1=-15/4, violating the zero row sum by -15/2. Using +15/4 restores the required zero row sum and zero first position moment."
         ],
         relation_to_source="Figures 5–7, original follower counts, gains, fixed-interaction boundary and displayed time horizons.",
     )
@@ -551,12 +551,12 @@ def compute_ensemble(profile="quick", jobs=1, checkpoint=None):
     meta = _base("nnn-ensemble", profile)
     meta.update(
         question="Do the mean and worst errors decrease across a specified ensemble and both physical boundary rules?",
-        relation_to_source="New restricted deterministic ensemble inspired by Figure 8. The paper profile matches its class counts, sizes and boundaries. Historical members and their grid are unavailable; the new Type II gains vary rather than being fixed at -2.",
+        relation_to_source="New restricted deterministic ensemble inspired by Figure 8. The paper profile matches its class counts, sizes and boundaries. The paper's members and selection grid are unavailable; the new Type II gains vary rather than being fixed at -2.",
         gains={
             "Type I": [-2, -2],
             "Type II": "gx=-a*b, gv=-(a+b), with a in [2,4] and b in [.4,1]",
         },
-        historical_selection_status="Unavailable: missing systems_type1.txt/stable.txt, grid coordinates, endpoints, ordering and exact constraints. 21^6=85766121 is only an arithmetic clue, not recovered provenance.",
+        source_selection_status="The parameter members and complete selection grid for Figure 8 were unavailable. The deterministic families below specify this experiment completely.",
         deterministic_selection={
             "Type I": "20 equally spaced u in [.05,.20] times 25 equally spaced q in [.10,.30]; p=1-u-q; rx=(0,-.5,1,-.5,0), rv=(-u,-p,1,-q,0), gains(-2,-2)",
             "Type II": "20 equally spaced a in [2,4] times 25 equally spaced b in [.4,1]; rx=(1,-2,1,0,0), rv=(0,-1,1,0,0), gains(-a*b,-a-b)",
@@ -569,7 +569,7 @@ def compute_ensemble(profile="quick", jobs=1, checkpoint=None):
         },
         boundaries={
             "drop": "Paper fixed interaction: discard missing interactions and adjust diagonal",
-            "fixed_mass": "Paper fixed mass: clamp missing indices to endpoint, without terminal rescaling; terminal rho_x/rho_v typo corrected using both archived implementations",
+            "fixed_mass": "Paper fixed mass: clamp missing indices to endpoint, without terminal rescaling; use the velocity weights for the velocity endpoint term",
         },
         Ns=Ns,
         configurations_per_class=count,
@@ -581,7 +581,7 @@ def compute_ensemble(profile="quick", jobs=1, checkpoint=None):
         numerical_checks="Trace doubling until max change/N<=2e-8; observable sampling change/prediction<=2e-6; contour damping 32 versus 40, flagged above 1e-7*N. These are numerical diagnostics, distinct from asymptotic error.",
         estimators={
             "Type I": "Extrema are sought in prediction-guided windows N/c_plus+jP +/- .65P, j=0,1,2. A1 is the first absolute lobe maximum; T is the crossing closest to 2P in [1.35P,2.65P]; |alpha| is the mean of the first two successive absolute peak ratios. Undefined measurements are masked explicitly.",
-            "Type II": "A is the first absolute minimum in a window around predicted N/c_plus, T1=A/v0 (so their relative errors are identical by construction); T2 is the zero intercept of a linear fit over the middle 30%–70% between predicted arrival times. Historical Type-II extraction code is unavailable; this estimator is specified here.",
+            "Type II": "A is the first absolute minimum in a window around predicted N/c_plus, T1=A/v0 (so their relative errors are identical by construction); T2 is the zero intercept of a linear fit over the middle 30%–70% between predicted arrival times. This explicitly specified estimator is an adaptation of Figure 8.",
         },
         columns=[
             "class",

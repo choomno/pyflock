@@ -1,6 +1,7 @@
 """Quiet Matplotlib defaults; use ``plot_style`` to avoid changing caller state."""
 
 from contextlib import contextmanager
+
 import numpy as np
 from matplotlib import rc_context
 from matplotlib.colors import LinearSegmentedColormap
