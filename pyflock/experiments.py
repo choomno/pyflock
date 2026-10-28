@@ -9,11 +9,13 @@ from __future__ import annotations
 import argparse
 import json
 import platform
+import shutil
 import subprocess
+import tempfile
 import time
 from hashlib import sha256
 from importlib import import_module
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 
 import numpy as np
 
@@ -277,7 +279,9 @@ def compute(name, profile="quick", *, jobs=1, checkpoint=None):
 def _convergence_case(spec):
     """One parameter case, optionally resumed from a checksum-checked checkpoint."""
     bi, bc, N, gv, av, checkpoint, source_digest = spec
-    key = sha256(json.dumps([bi, N, gv, av, source_digest]).encode()).hexdigest()
+    key = sha256(
+        json.dumps([bi, bc, N, gv, av, source_digest, _software()]).encode()
+    ).hexdigest()
     path = Path(checkpoint) / f"{key}.npz" if checkpoint else None
     if path is not None:
         path.parent.mkdir(parents=True, exist_ok=True)
@@ -287,8 +291,21 @@ def _convergence_case(spec):
             and digest.exists()
             and sha256(path.read_bytes()).hexdigest() == digest.read_text().strip()
         ):
-            with np.load(path, allow_pickle=False) as saved:
-                return saved["row"].tolist(), saved["t"], saved["w"]
+            try:
+                with np.load(path, allow_pickle=False) as saved:
+                    row, t, w = saved["row"], saved["t"], saved["w"]
+                if (
+                    row.shape == (16,)
+                    and np.array_equal(row[:4], [bi, N, gv, av])
+                    and t.ndim == 1
+                    and len(t) >= 3
+                    and w.shape == t.shape
+                    and all(np.isfinite(v).all() for v in (row, t, w))
+                    and np.all(np.diff(t) > 0)
+                ):
+                    return row.tolist(), t, w
+            except (KeyError, ValueError, OSError):
+                pass
     st = nn_stencil(-1.0, gv, -0.5, av)
     prediction = theory_amplitudes(st, N, kmax=3)
     end = prediction["T_k"][2] + 0.3 * prediction["P"]
@@ -548,7 +565,7 @@ def draw(name, data, meta):
             axs[0, 1].legend(loc="upper right", fontsize=8)
         else:
             fig, axs = plt.subplots(
-                1, 3, figsize=(11, 3.6), layout="constrained", sharex=True
+                1, 3, figsize=(11, 3.9), layout="constrained", sharex=True
             )
             rows = data["measurements"]
             for j, (ax, label) in enumerate(
@@ -581,7 +598,8 @@ def draw(name, data, meta):
                 ax.set(title=label, xlabel="Followers $N$")
                 ax.grid(True, alpha=0.4)
             axs[0].set_ylabel("Relative error / prediction")
-            axs[-1].legend(fontsize=8, loc="best")
+            handles, labels = axs[-1].get_legend_handles_labels()
+            fig.legend(handles, labels, fontsize=8, ncols=4, loc="outside lower center")
             pairs = len(meta["velocity_weights"]) * len(meta["velocity_gains"])
             sizes = meta["Ns"]
             fig.suptitle(
@@ -608,6 +626,138 @@ def _source_digest(directory=None):
         h.update(path.name.encode())
         h.update(path.read_bytes())
     return h.hexdigest()
+
+
+def _file_record(path, relative):
+    content = path.read_bytes()
+    return {
+        "path": relative,
+        "bytes": len(content),
+        "sha256": sha256(content).hexdigest(),
+    }
+
+
+def _array_record(data):
+    record = {}
+    for name, value in data.items():
+        value = np.asarray(value)
+        if value.dtype.kind not in "biufc" or not np.isfinite(value).all():
+            raise ValueError(f"Experiment array must be finite and numeric: {name}")
+        record[name] = {"shape": list(value.shape), "dtype": value.dtype.str}
+    if not record:
+        raise ValueError("Experiment data must contain at least one array")
+    return record
+
+
+def _record_path(dest, name):
+    if not isinstance(name, str) or not name:
+        raise ValueError("Inventory paths must be nonempty strings")
+    relative = PurePosixPath(name)
+    if (
+        relative.is_absolute()
+        or ".." in relative.parts
+        or "\\" in name
+        or relative.as_posix() != name
+        or not (dest / name).resolve().is_relative_to(dest.resolve())
+    ):
+        raise ValueError(f"Inventory path leaves the experiment directory: {name}")
+    return dest / name
+
+
+def _read_saved(name, dest, *, artifacts):
+    """Check a saved computation without executing its archived Python source."""
+    meta = json.loads(_record_path(dest, "experiment.json").read_text())
+    if (
+        not isinstance(meta, dict)
+        or type(meta.get("schema")) is not int
+        or meta["schema"] not in (1, 2)
+    ):
+        raise ValueError("Unknown experiment record schema")
+    if meta.get("experiment") != name:
+        raise ValueError(
+            "Experiment record name does not match the requested experiment"
+        )
+    if meta["schema"] == 1 and ("files" in meta or "arrays" in meta):
+        raise ValueError("An inventory record requires schema 2")
+    archive = _record_path(dest, "data.npz")
+    if sha256(archive.read_bytes()).hexdigest() != meta.get("data_sha256"):
+        raise ValueError(f"Data checksum mismatch: {dest}")
+    source = _record_path(dest, "source")
+    if not source.is_dir() or not any(source.glob("*.py")):
+        raise ValueError(f"Missing source snapshot: {dest}")
+    for module in source.glob("*.py"):
+        _record_path(dest, f"source/{module.name}")
+    if _source_digest(source) != meta.get("source_sha256"):
+        raise ValueError(f"Source snapshot checksum mismatch: {dest}")
+    with np.load(archive, allow_pickle=False) as saved:
+        data = dict(saved)
+    arrays = _array_record(data)
+    exports = {"figure.png", "figure.pdf", "figure.svg"}
+    if meta["schema"] == 2:
+        if meta.get("arrays") != arrays:
+            raise ValueError("Array shapes or dtypes differ from the saved record")
+        entries = meta.get("files")
+        if not isinstance(entries, list) or not entries:
+            raise ValueError("Experiment inventory must list files")
+        seen = set()
+        for entry in entries:
+            if not isinstance(entry, dict):
+                raise ValueError("Invalid experiment inventory entry")
+            relative = entry.get("path")
+            path = _record_path(dest, relative)
+            if relative in seen:
+                raise ValueError(f"Repeated experiment inventory path: {relative}")
+            seen.add(relative)
+            if artifacts or relative not in exports:
+                if _file_record(path, relative) != entry:
+                    raise ValueError(f"Inventory checksum or size mismatch: {relative}")
+        required = {"data.npz", *exports}
+        if "measurements" in data and "columns" in meta:
+            required.add("measurements.csv")
+        required.update(f"source/{p.name}" for p in source.glob("*.py"))
+        if not required <= seen:
+            raise ValueError(
+                f"Missing required inventory files: {sorted(required - seen)}"
+            )
+    if artifacts:
+        recorded = meta.get("artifacts")
+        if not isinstance(recorded, dict) or set(recorded) != exports:
+            raise ValueError("Experiment must record PDF, SVG and PNG exports")
+        for relative in sorted(exports):
+            if (
+                sha256(_record_path(dest, relative).read_bytes()).hexdigest()
+                != recorded[relative]
+            ):
+                raise ValueError(f"Figure checksum mismatch: {relative}")
+    if "measurements" in data and "columns" in meta:
+        table = np.asarray(data["measurements"])
+        csv = _record_path(dest, "measurements.csv")
+        with csv.open() as stream:
+            header = stream.readline().rstrip("\n")
+        if header != ",".join(meta["columns"]):
+            raise ValueError("Measurement CSV column names differ from the record")
+        values = np.loadtxt(csv, delimiter=",", skiprows=1, ndmin=2)
+        if values.shape != table.shape or not np.array_equal(values, table):
+            raise ValueError("Measurement CSV differs from the numerical arrays")
+    return data, meta
+
+
+def verify(name, output, *, artifacts=True):
+    """Verify saved files and arrays; this does not recompute a mathematical result.
+
+    ``artifacts=False`` checks the computation before redrawing figure exports.
+    Checksums detect changes relative to the record, not the record's authenticity.
+    """
+    if name not in NAMES:
+        raise ValueError(f"Unknown experiment: {name}")
+    data, meta = _read_saved(name, Path(output) / name, artifacts=artifacts)
+    return {
+        "experiment": name,
+        "schema": meta["schema"],
+        "pass": True,
+        "arrays": len(data),
+        "figures_checked": artifacts,
+    }
 
 
 def _git_commit():
@@ -637,21 +787,24 @@ def _git_dirty():
 
 
 def run(name, output, *, profile="quick", redraw=False, jobs=1):
+    """Compute and export, or redraw checked saved arrays.
+
+    A failed computation or render preserves the preceding exported result.
+    Numerical checkpoints are retained separately and checked before reuse.
+    """
     import matplotlib.pyplot as plt
 
+    if name not in NAMES:
+        raise ValueError(f"Unknown experiment: {name}")
+    if profile not in ("quick", "paper"):
+        raise ValueError("profile must be quick or paper")
+    if isinstance(jobs, bool) or not isinstance(jobs, int) or jobs < 1:
+        raise ValueError("jobs must be a positive integer")
     dest = Path(output) / name
-    dest.mkdir(parents=True, exist_ok=True)
+    dest.parent.mkdir(parents=True, exist_ok=True)
     started = time.perf_counter()
     if redraw:
-        meta = json.loads((dest / "experiment.json").read_text())
-        if sha256((dest / "data.npz").read_bytes()).hexdigest() != meta["data_sha256"]:
-            raise ValueError(f"Data checksum mismatch: {dest}")
-        if (dest / "source").exists() and _source_digest(dest / "source") != meta[
-            "source_sha256"
-        ]:
-            raise ValueError(f"Source snapshot checksum mismatch: {dest}")
-        with np.load(dest / "data.npz", allow_pickle=False) as saved:
-            data = dict(saved)
+        data, meta = _read_saved(name, dest, artifacts=False)
     else:
         computation_source = _source_digest()
         computation_commit = _git_commit()
@@ -666,12 +819,7 @@ def run(name, output, *, profile="quick", redraw=False, jobs=1):
             jobs=jobs,
             checkpoint=dest / "cases",
         )
-        if any(not np.isfinite(v).all() for v in data.values()):
-            raise RuntimeError("Nonfinite experiment data")
-        snapshot = dest / "source"
-        snapshot.mkdir(exist_ok=True)
-        for filename, content in source_files.items():
-            (snapshot / filename).write_bytes(content)
+        _array_record(data)
         grids = {
             key: {
                 "start": float(value[0]),
@@ -683,15 +831,6 @@ def run(name, output, *, profile="quick", redraw=False, jobs=1):
         }
         if grids:
             meta["time_grids"] = grids
-        np.savez_compressed(dest / "data.npz", **data)
-        if "measurements" in data and "columns" in meta:
-            np.savetxt(
-                dest / "measurements.csv",
-                data["measurements"],
-                delimiter=",",
-                header=",".join(meta["columns"]),
-                comments="",
-            )
         if name == "convergence":
             meta["maximum_sampling_change"] = dict(
                 zip(
@@ -700,28 +839,90 @@ def run(name, output, *, profile="quick", redraw=False, jobs=1):
                 )
             )
         meta.update(
+            schema=2,
+            profile=profile,
             software=_software(),
             source_sha256=computation_source,
             git_commit=computation_commit,
             git_worktree_dirty=computation_dirty,
-            data_sha256=sha256((dest / "data.npz").read_bytes()).hexdigest(),
         )
-    with plot_style():
-        fig = draw(name, data, meta)
-        fig.savefig(dest / "figure.png", dpi=180)
-        fig.savefig(
-            dest / "figure.pdf", metadata={"CreationDate": None, "ModDate": None}
+    # Write the complete export before replacing the preceding result. Source
+    # snapshots are copied only after successful computation and rendering.
+    with tempfile.TemporaryDirectory(prefix=f".{name}-", dir=dest.parent) as temporary:
+        staging = Path(temporary) / name
+        staging.mkdir()
+        if redraw:
+            (staging / "source").mkdir()
+            for module in (dest / "source").glob("*.py"):
+                shutil.copyfile(module, staging / "source" / module.name)
+            shutil.copyfile(dest / "data.npz", staging / "data.npz")
+        else:
+            snapshot = staging / "source"
+            snapshot.mkdir()
+            for filename, content in source_files.items():
+                (snapshot / filename).write_bytes(content)
+            np.savez_compressed(staging / "data.npz", **data)
+        if "measurements" in data and "columns" in meta:
+            np.savetxt(
+                staging / "measurements.csv",
+                data["measurements"],
+                delimiter=",",
+                header=",".join(meta["columns"]),
+                comments="",
+            )
+        with plot_style():
+            fig = draw(name, data, meta)
+            try:
+                fig.savefig(staging / "figure.png", dpi=180)
+                fig.savefig(
+                    staging / "figure.pdf",
+                    metadata={"CreationDate": None, "ModDate": None},
+                )
+                fig.savefig(staging / "figure.svg", metadata={"Date": None})
+            finally:
+                plt.close(fig)
+        meta["data_sha256"] = sha256((staging / "data.npz").read_bytes()).hexdigest()
+        meta["render"] = {"software": _software(), "source_sha256": _source_digest()}
+        meta["artifacts"] = {
+            f: sha256((staging / f).read_bytes()).hexdigest()
+            for f in ("figure.png", "figure.pdf", "figure.svg")
+        }
+        # Redrawing a schema-1 export retains its computational provenance and
+        # adds the inventory needed by the current independent file check.
+        meta["schema"] = 2
+        meta["arrays"] = _array_record(data)
+        meta["files"] = [
+            _file_record(path, path.relative_to(staging).as_posix())
+            for path in sorted(staging.rglob("*"))
+            if path.is_file()
+        ]
+        (staging / "experiment.json").write_text(
+            json.dumps(meta, indent=2, allow_nan=False) + "\n"
         )
-        fig.savefig(dest / "figure.svg", metadata={"Date": None})
-        plt.close(fig)
-    meta["render"] = {"software": _software(), "source_sha256": _source_digest()}
-    meta["artifacts"] = {
-        f: sha256((dest / f).read_bytes()).hexdigest()
-        for f in ("figure.png", "figure.pdf", "figure.svg")
-    }
-    (dest / "experiment.json").write_text(
-        json.dumps(meta, indent=2, allow_nan=False) + "\n"
-    )
+        _read_saved(name, staging, artifacts=True)
+        previous = Path(temporary) / "previous"
+        if dest.exists():
+            dest.rename(previous)
+        try:
+            staging.rename(dest)
+        except OSError:
+            if previous.exists():
+                previous.rename(dest)
+            raise
+        # Case caches and unrelated files are retained separately from exports.
+        replaced = {
+            "source",
+            "data.npz",
+            "measurements.csv",
+            "figure.png",
+            "figure.pdf",
+            "figure.svg",
+            "experiment.json",
+        }
+        if previous.exists():
+            for path in previous.iterdir():
+                if path.name not in replaced:
+                    path.rename(dest / path.name)
     print(f"{name}: {time.perf_counter() - started:.1f}s -> {dest}", flush=True)
     return meta
 
@@ -736,10 +937,16 @@ def main(argv=None):
         default="quick",
         help="Small validation runs or published sizes and parameter families; consult each record for source departures.",
     )
-    parser.add_argument(
+    operation = parser.add_mutually_exclusive_group()
+    operation.add_argument(
         "--redraw",
         action="store_true",
         help="Read recorded arrays; do not compute again.",
+    )
+    operation.add_argument(
+        "--verify",
+        action="store_true",
+        help="Check saved arrays, source, tables and figure files; do not compute or draw.",
     )
     parser.add_argument(
         "--jobs",
@@ -755,7 +962,20 @@ def main(argv=None):
     matplotlib.use("Agg")
     names = NAMES if args.experiment == "all" else (args.experiment,)
     for name in names:
-        run(name, args.output, profile=args.profile, redraw=args.redraw, jobs=args.jobs)
+        if args.verify:
+            try:
+                report = verify(name, args.output)
+            except (ValueError, KeyError, TypeError, OSError) as error:
+                parser.exit(1, f"{name}: verification failed: {error}\n")
+            print(json.dumps(report, sort_keys=True), flush=True)
+        else:
+            run(
+                name,
+                args.output,
+                profile=args.profile,
+                redraw=args.redraw,
+                jobs=args.jobs,
+            )
 
 
 if __name__ == "__main__":

@@ -15,6 +15,8 @@ def transfer_roots(omega, rho, f=-1.0, g=-1.0):
     omega = np.asarray(omega, dtype=float)
     if (
         not 0 < rho < 1
+        or not np.isfinite(f)
+        or not np.isfinite(g)
         or f >= 0
         or g >= 0
         or np.any(omega < 0)
@@ -101,32 +103,48 @@ def draw_roots(data, meta):
 
 
 def _smallest_high_precision(N, rho):
-    """Smallest positive path Laplacian eigenvalue by a 70-digit Sturm count."""
+    """Smallest positive path eigenvalue by an adaptive-precision Sturm count.
+
+    For rho>1/2 the smallest eigenvalue decreases geometrically with N.
+    Precision and the bisection resolution account for that scale before
+    conversion to the package's binary64 output arrays.
+    """
     import mpmath as mp
 
-    with mp.workdps(70):
+    with mp.workdps(30):
+        r = mp.mpf(str(rho))
+        decades = max(0, int(mp.ceil(N * mp.log10(r / (1 - r)))))
+    precision = max(70, decades + 40)
+    with mp.workdps(precision):
         r = mp.mpf(str(rho))
         off = [r * (1 - r)] * (N - 2) + [r]
+        tiny = mp.mpf(10) ** (10 - precision)
 
         def negative_pivots(value):
             pivot = 1 - value
-            count = int(pivot < 0)
-            for square in off:
-                if abs(pivot) < mp.mpf("1e-65"):
-                    pivot = -mp.mpf("1e-65")
-                pivot = 1 - value - square / pivot
+            count = 0
+            for k in range(N):
+                if abs(pivot) < tiny:
+                    pivot = -tiny
                 count += int(pivot < 0)
+                if k < N - 1:
+                    pivot = 1 - value - off[k] / pivot
             return count
 
         left = mp.mpf("0")
         right = mp.mpf("1")
-        for _ in range(210):
+        for _ in range(int(mp.ceil((precision - 5) * mp.log(10, 2)))):
             middle = (left + right) / 2
             if negative_pivots(middle):
                 right = middle
             else:
                 left = middle
-        return float((left + right) / 2)
+        result = float((left + right) / 2)
+        if result == 0:
+            raise FloatingPointError(
+                "Smallest path eigenvalue is below the binary64 range"
+            )
+        return result
 
 
 def path_modes(N, rho, f=-1.0, g=-2.0):
@@ -135,8 +153,15 @@ def path_modes(N, rho, f=-1.0, g=-2.0):
     The follower Laplacian is similar to a symmetric tridiagonal matrix with
     diagonal1, bulk off-diagonal -sqrt(rho(1-rho)), terminal -sqrt(rho).
     """
-    if N < 2 or not 0 < rho < 1:
+    if (
+        isinstance(N, (bool, np.bool_))
+        or not isinstance(N, (int, np.integer))
+        or N < 2
+        or not 0 < rho < 1
+    ):
         raise ValueError("N>=2 and 0<rho<1 required")
+    if not np.isfinite(f) or not np.isfinite(g):
+        raise ValueError("f and g must be finite")
     off = np.full(N - 1, -np.sqrt(rho * (1 - rho)))
     off[-1] = -np.sqrt(rho)
     laplacian = eigvalsh_tridiagonal(np.ones(N), off)

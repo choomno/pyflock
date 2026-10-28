@@ -19,8 +19,16 @@ from .style import CAT, plot_style
 
 def damping(n, hp, r=1.0):
     """Paper (3),(4): leader fixed, last follower has forward error only."""
-    if n < 1 or int(n) != n or hp < 0 or r <= 0:
-        raise ValueError("Require integer n>=1, hp>=0, r>0")
+    if (
+        isinstance(n, (bool, np.bool_))
+        or not isinstance(n, (int, np.integer))
+        or n < 1
+        or not np.isfinite(hp)
+        or hp < 0
+        or not np.isfinite(r)
+        or r <= 0
+    ):
+        raise ValueError("Require integer n>=1, finite hp>=0, finite r>0")
     b = np.eye(n) - np.eye(n, k=1)
     return r * (b + hp * np.abs(b)) @ b.T
 

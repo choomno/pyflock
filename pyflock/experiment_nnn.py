@@ -9,11 +9,13 @@ from __future__ import annotations
 import json
 from concurrent.futures import ProcessPoolExecutor
 from dataclasses import dataclass
+from functools import cache
 from hashlib import sha256
 from math import comb
 from pathlib import Path
 
 import numpy as np
+import scipy
 from scipy import sparse
 
 from .analysis import extrema
@@ -31,6 +33,25 @@ EXAMPLES = (
 )
 BOUNDARIES = ("drop", "fixed_mass")
 ALGORITHM_VERSION = "nnn-stable-families-v3"
+
+
+@cache
+def _checkpoint_version():
+    """Bind a process's numerical checkpoints to source and arithmetic versions."""
+    digest = sha256(
+        f"{ALGORITHM_VERSION};numpy={np.__version__};scipy={scipy.__version__}".encode()
+    )
+    for name in (
+        Path(__file__).name,
+        "analysis.py",
+        "dispersion.py",
+        "matrices.py",
+        "solve.py",
+        "stencil.py",
+    ):
+        digest.update(name.encode())
+        digest.update(Path(__file__).with_name(name).read_bytes())
+    return digest.hexdigest()
 
 
 def _record(st):
@@ -294,10 +315,19 @@ def tail_trace(
     """
     if not np.isfinite(tmax) or tmax <= 0 or not np.isfinite(v0):
         raise ValueError("tmax must be positive finite; v0 must be finite")
-    if not isinstance(nfft, (int, np.integer)) or nfft < 32 or nfft % period_factor:
-        raise ValueError("nfft must be integer>=32 divisible by period_factor")
-    if period_factor < 2 or not isinstance(period_factor, (int, np.integer)):
+    if (
+        isinstance(period_factor, (bool, np.bool_))
+        or not isinstance(period_factor, (int, np.integer))
+        or period_factor < 2
+    ):
         raise ValueError("period_factor must be an integer>=2")
+    if (
+        isinstance(nfft, (bool, np.bool_))
+        or not isinstance(nfft, (int, np.integer))
+        or nfft < 32
+        or nfft % period_factor
+    ):
+        raise ValueError("nfft must be integer>=32 divisible by period_factor")
     if not np.isfinite(damping) or damping <= 0:
         raise ValueError("damping must be positive finite")
     period = period_factor * tmax
@@ -328,6 +358,20 @@ def converged_tail(
     returned, so large ensembles can archive per-run numerical diagnostics.
     This comparison controls truncation/discretization, not contour aliasing.
     """
+    if (
+        isinstance(start_nfft, (bool, np.bool_))
+        or not isinstance(start_nfft, (int, np.integer))
+        or start_nfft < 32
+    ):
+        raise ValueError("start_nfft must be an integer>=32")
+    if (
+        isinstance(max_nfft, (bool, np.bool_))
+        or not isinstance(max_nfft, (int, np.integer))
+        or max_nfft < 2 * start_nfft
+    ):
+        raise ValueError("max_nfft must be an integer>=2*start_nfft")
+    if not np.isfinite(tolerance) or tolerance <= 0:
+        raise ValueError("tolerance must be positive finite")
     scale = max(N * abs(v0), np.finfo(float).tiny)
     old = tail_trace(
         st,
@@ -445,13 +489,27 @@ def _ensemble_case(spec):
     st = Stencil(record[2:7], record[7:12], *record[:2])
     fingerprint = sha256(
         (
-            ALGORITHM_VERSION + json.dumps([kind, index, record.tolist(), boundary, N])
+            _checkpoint_version()
+            + json.dumps([kind, index, record.tolist(), boundary, N])
         ).encode()
     ).hexdigest()[:20]
     dest = Path(checkpoint) / f"{fingerprint}.npz" if checkpoint else None
-    if dest is not None and dest.exists():
-        with np.load(dest, allow_pickle=False) as saved:
-            return saved["row"]
+    if dest is not None and dest.exists() and dest.with_suffix(".sha256").exists():
+        expected = dest.with_suffix(".sha256").read_text().strip()
+        if sha256(dest.read_bytes()).hexdigest() == expected:
+            try:
+                with np.load(dest, allow_pickle=False) as saved:
+                    row = saved["row"]
+                if (
+                    row.shape == (23,)
+                    and np.isfinite(row).all()
+                    and np.array_equal(
+                        row[:4], [kind, BOUNDARIES.index(boundary), N, index]
+                    )
+                ):
+                    return row
+            except (KeyError, ValueError, OSError):
+                pass
     cp, cm = signal_velocities(st)
     end = 3.4 * N * (1 / cp - 1 / cm) if kind == 0 else 1.25 * N / cm
     # A row always contains finite values; validity and status are explicit.
@@ -510,6 +568,9 @@ def _ensemble_case(spec):
             audit_w=trace.relative[selected],
         )
         temporary.replace(dest)
+        dest.with_suffix(".sha256").write_text(
+            sha256(dest.read_bytes()).hexdigest() + "\n"
+        )
     return row
 
 

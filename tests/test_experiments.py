@@ -8,6 +8,7 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import numpy as np
 import pytest
+from scipy.linalg import block_diag, null_space
 from scipy.optimize import linear_sum_assignment
 
 import pyflock as pf
@@ -17,13 +18,23 @@ from pyflock import plotting as P
 
 def test_circle_mode_removal_preserves_unstable_eigenvalues():
     st = pf.nn_stencil(-1.0, -1.0, -0.2, -0.5)
-    values = P.circle_eigenvalues(st, 12)
-    full = np.linalg.eigvals(pf.system_matrix_circle(st, 12))
+    N = 12
+    values = P.circle_eigenvalues(st, N)
+    matrix = pf.system_matrix_circle(st, N)
+    # Restrict to mean-zero position and velocity vectors. The exact coherent
+    # Jordan block otherwise acquires spurious O(sqrt(eps)) eigenvalues.
+    basis = block_diag(*[null_space(np.ones((1, N)))] * 2)
+    restricted = basis.T @ matrix @ basis
+    np.testing.assert_allclose(matrix @ basis, basis @ restricted, atol=2e-14, rtol=0)
+    expected = np.linalg.eigvals(restricted)
+    assert values.size == expected.size == 2 * (N - 1)
     assert values.real.max() > 0.01
-    # Remove the known neutral subspace by matching every nonzero-mode root.
-    rows, cols = linear_sum_assignment(abs(values[:, None] - full[None, :]))
-    assert max(abs(values[rows] - full[cols])) < 1e-8
-    assert max(abs(np.delete(full, cols))) < 1e-8
+    rows, cols = linear_sum_assignment(abs(values[:, None] - expected[None, :]))
+    np.testing.assert_allclose(values[rows], expected[cols], atol=2e-12, rtol=0)
+    position = np.r_[np.ones(N), np.zeros(N)]
+    velocity = np.r_[np.zeros(N), np.ones(N)]
+    np.testing.assert_allclose(matrix @ position, 0, atol=2e-14, rtol=0)
+    np.testing.assert_allclose(matrix @ velocity, position, atol=2e-14, rtol=0)
 
 
 def test_plotting_preserves_global_style_and_invalid_theory_is_absent():
@@ -128,6 +139,9 @@ def test_failed_recomputation_preserves_previous_source_record(tmp_path, monkeyp
     source.write_bytes(source.read_bytes() + b"\n# Earlier archived source.\n")
     meta = json.loads((dest / "experiment.json").read_text())
     meta["source_sha256"] = E._source_digest(dest / "source")
+    for entry in meta["files"]:
+        if entry["path"] == "source/dispersion.py":
+            entry.update(E._file_record(source, entry["path"]))
     (dest / "experiment.json").write_text(json.dumps(meta))
 
     def failed(*args, **kwargs):

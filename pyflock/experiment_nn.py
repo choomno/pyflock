@@ -77,7 +77,9 @@ def draw_stable(data, meta):
             ax.axhline(0, color=".7", lw=0.5)
             ax.set(xlabel="Real part", ylabel="Imaginary part", title=title)
         axes[0].legend(loc="upper left")
-        fig.suptitle(f"Published stable example · N={meta['N']}", fontsize=11)
+        fig.suptitle(
+            f"Stable circle with source couplings · N={meta['N']}", fontsize=11
+        )
         return fig
 
 
@@ -186,7 +188,7 @@ def draw_phase(data, meta):
         for ax in axes:
             ax.set_xlabel("Fourier mode $m$")
             ax.axhline(0, color=".7", lw=0.5)
-        fig.suptitle(f"Published phase-speed example · N={meta['N']}", fontsize=11)
+        fig.suptitle(f"Phase speeds with source couplings · N={meta['N']}", fontsize=11)
         return fig
 
 
