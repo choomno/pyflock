@@ -100,10 +100,11 @@ asymptotic formulas; no fitted convergence rate is asserted.
 
 ## Redraw and validation
 
-`--redraw` checks the saved data checksum and renders from arrays without running
-simulations. The computation and rendering source digests are recorded separately. Each
-experiment also retains the package source in `source/`, matching its computation
-digest; redraw validates this snapshot when present.
+`--verify` checks the experiment record and saved-file checksums. `--redraw`
+checks the saved numerical data and source snapshot, then renders the arrays
+without running simulations. Computation and rendering source digests are
+recorded separately. Each experiment retains the package source in `source/`,
+matching its computation digest.
 A changed renderer can therefore be used without losing the provenance of the data.
 
 Tests compare Fourier and matrix calculations, dense and sparse propagation,

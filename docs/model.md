@@ -1,5 +1,9 @@
 # Model and conventions
 
+The [mathematical reference](mathematical-reference/mathematical-reference.pdf)
+gives a self-contained account, including a derivation of the local diffusion
+coefficients and the heterogeneous gain and phase conventions.
+
 The state variable $z_k$ is displacement from the prescribed formation spacing.
 Coherent motion is $z_k(t)=a+bt$. The interior equations are
 
@@ -70,9 +74,9 @@ estimate for a reflected wave or a tail extremum.
 
 ## Stability and tail observables
 
-Circle stability means convergence to coherent motion: the translation and
-uniform-velocity modes give a double zero eigenvalue; all others must lie in
-the open left half-plane. Path stability is checked on the follower matrix
+Circle stability means convergence to coherent motion: the zero eigenvalue
+must have algebraic multiplicity exactly two, with the coherent Jordan block;
+all others must lie in the open left half-plane. Path stability is checked on the follower matrix
 with the prescribed leader removed. For fixed $N$, this is distinct from
 control of transient amplification as $N\to\infty$.
 
