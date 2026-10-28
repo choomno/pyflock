@@ -1,10 +1,11 @@
 # pyflock
 
-Numerical simulation and spectral analysis of one-dimensional arrays of assymetrically coupled
-linear oscillators. The package includes reproducible demonstrations from the
-Cantos–Hammond–Veerman paper corpus, next-nearest-neighbour studies, and Lyons's
-heterogeneous-agent thesis. The [coverage map](docs/coverage.md) identifies source
-figures, adaptations and constructed comparisons.
+Pyflock conducts numerical simulation and spectral analysis of one-dimensional
+arrays of assymetrically coupled linear oscillators. The package includes
+reproducible demonstrations from the Cantos–Hammond–Veerman paper corpus,
+next-nearest-neighbour studies, and Lyons's heterogeneous-agent thesis. The
+[coverage map](docs/coverage.md) identifies source figures, adaptations and
+constructed comparisons.
 
 ![Propagation and selected trajectories](docs/img/propagation.png)
 
