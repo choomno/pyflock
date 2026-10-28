@@ -1,2 +1,4 @@
 -r requirements-tested.txt
 ruff==0.17.1
+coverage==7.17.0
+build==1.6.1
