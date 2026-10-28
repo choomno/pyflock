@@ -100,6 +100,9 @@ The measured source is the complete package, with no coverage exclusions.
 
 Development takes place on `dev`.
 
+A [large-array simulation stub](docs/large-simulations.md) records the proposed
+scope and validation for future work.
+
 | Location | Contents |
 | --- | --- |
 | `pyflock/` | Models, numerical methods, plotting and named experiments. |
